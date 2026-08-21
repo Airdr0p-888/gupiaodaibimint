@@ -49,8 +49,8 @@ const RPC_URLS = {
   97: "https://data-seed-prebsc-1-s1.binance.org:8545"
 };
 
-// 默认合约地址：页面打开时预填并自动读取
-const DEFAULT_CONTRACT = "0x0d9cded5067456d84909f89ab1ea755b1bad8888";
+// 默认合约地址：留空，用户粘贴合约地址后点「读取合约」
+const DEFAULT_CONTRACT = "";
 
 const state = {
   provider: null,     // 当前 provider（只读 RPC 或钱包）
@@ -208,7 +208,6 @@ async function loadContract() {
   await ensureWallet();
   const address = $("smContractAddress").value.trim();
   if (!isAddress(address)) throw new Error("请填写正确的合约地址。");
-  localStorage.setItem("stockMintContract", address);
   const btn = $("smLoadContract");
   btn.disabled = true;
   btn.innerHTML = `${ICONS.refresh}<span>读取中...</span>`;
@@ -216,8 +215,8 @@ async function loadContract() {
     state.contract = new ethers.Contract(address, TOKEN_ABI, state.signer);
     state.readOnly = false;
     await refreshContract();
-    $("smTokenAddr").textContent = short(address);
-    $("smTokenAddr").title = address;
+    const addrEl = $("smTokenAddr");
+    if (addrEl) { addrEl.textContent = short(address); addrEl.title = address; }
     log(`合约已读取：${address}`, "ok");
   } finally {
     btn.disabled = false;
@@ -240,7 +239,14 @@ async function ensureContractWithSigner() {
 /** 页面打开时自动读取（只读 RPC，无需钱包） */
 async function autoLoad() {
   const address = $("smContractAddress").value.trim();
-  if (!isAddress(address)) return;
+  if (!isAddress(address)) {
+    const badge = $("smAutoBadge");
+    if (badge) {
+      badge.classList.add("done");
+      badge.textContent = "等待输入合约地址";
+    }
+    return;
+  }
 
   // 优先使用钱包 provider 探测网络（不请求授权，不弹窗）
   let provider = null;
@@ -274,8 +280,8 @@ async function autoLoad() {
       state.contract = new ethers.Contract(address, TOKEN_ABI, state.provider);
       await refreshContract();
     }
-    $("smTokenAddr").textContent = short(address);
-    $("smTokenAddr").title = address;
+    const addrEl = $("smTokenAddr");
+    if (addrEl) { addrEl.textContent = short(address); addrEl.title = address; }
     $("smAutoBadge").classList.add("done");
     $("smAutoBadge").textContent = "已自动读取";
     log("已自动读取合约公开信息（连接钱包后可查看个人数据）", "ok");
@@ -567,9 +573,7 @@ async function run(button, fn) {
 function bootAddress() {
   const params = new URLSearchParams(location.search);
   const fromUrl = params.get("contract");
-  const saved = localStorage.getItem("stockMintContract");
-  const address = isAddress(fromUrl) ? fromUrl : (isAddress(saved) ? saved : DEFAULT_CONTRACT);
-  if (address && $("smContractAddress")) $("smContractAddress").value = address;
+  if (isAddress(fromUrl) && $("smContractAddress")) $("smContractAddress").value = fromUrl;
 }
 
 function initMint() {
@@ -577,7 +581,6 @@ function initMint() {
   const lc = $("smLoadContract");
   const mn = $("smMintNow");
   const cd = $("smClaimDividends");
-  const ca = $("smCopyAddr");
   if (!cw) return; // Mint section not on this page
 
   cw.addEventListener("click", (e) =>
@@ -589,20 +592,6 @@ function initMint() {
   lc.addEventListener("click", (e) => run(e.currentTarget, loadContract));
   mn.addEventListener("click", (e) => run(e.currentTarget, mintNow));
   cd.addEventListener("click", (e) => run(e.currentTarget, claimDividends));
-  if (ca) {
-    ca.addEventListener("click", async () => {
-      const addr = $("smContractAddress").value.trim();
-      if (!addr) return;
-      try {
-        await navigator.clipboard.writeText(addr);
-        ca.textContent = "已复制";
-        ca.classList.add("copied");
-        setTimeout(() => { ca.textContent = "复制"; ca.classList.remove("copied"); }, 1500);
-      } catch {
-        log("复制失败，请手动复制", "error");
-      }
-    });
-  }
   // 输入框回车触发读取
   $("smContractAddress").addEventListener("keydown", (e) => {
     if (e.key === "Enter") run(lc, loadContract);
