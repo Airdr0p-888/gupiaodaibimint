@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>部署指南 · StockMint</title>
+  <title>部署发射台 · StockMint</title>
   <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="launchpad.js"></script>
 </head>
 <body>
 
@@ -24,170 +25,281 @@
     <a href="index.html">首页</a>
     <a href="features.html">功能展示</a>
     <a href="lifecycle.html">发射流程</a>
-    <a href="deploy.html" class="active">部署指南</a>
+    <a href="deploy.html" class="active">部署发射台</a>
     <a href="stocks.html">可用股票</a>
   </div>
 </nav>
 
-<section class="section page-wrap">
+<!-- ===== Deploy Console（完整部署功能，来自大泵-8.15，无后台） ===== -->
+<section class="section page-wrap" id="deploy">
   <div class="container">
     <div class="section-head">
-      <div class="eyebrow">Deploy Guide</div>
-      <h2 class="section-title">一键部署指南</h2>
-      <p class="section-desc">浏览器内编译 + 部署，无需本地环境。连接钱包后即可完成「发射台 → 主代币 → 交易对 → 开启 Mint」全流程，全程链上确认。</p>
+      <div class="eyebrow">Launch Stack · Browser Deploy</div>
+      <h2 class="section-title">部署发射台</h2>
+      <p class="section-desc">浏览器内 solc 0.8.26 编译 + 一键部署。连接钱包即可完成「Launchpad → 主代币 → 交易对 → 初始化 → 开启 Mint」全流程，每一步都在链上确认。</p>
     </div>
 
-    <!-- Deploy steps timeline -->
-    <div class="deploy-steps">
-      <div class="deploy-step">
-        <div class="deploy-step-num">1</div>
-        <div class="deploy-step-body">
-          <h3>连接钱包</h3>
-          <p>连接 MetaMask / TokenPocket，自动检测 BSC 主网；页面会自动填入 Pancake V2 Router、WBNB / USDT 等默认地址。</p>
+    <div class="lp-shell">
+      <!-- Top bar -->
+      <div class="lp-topbar">
+        <div class="lp-topbar-left">
+          <div class="eyebrow">Deploy Console</div>
+          <h3 class="lp-title">Launchpad 部署控制台</h3>
+        </div>
+        <div class="lp-topbar-right">
+          <span id="lpDeployBadge" class="lp-badge">待部署</span>
+          <button id="lpConnectWallet" class="lp-btn lp-btn-primary"><span class="lp-wallet-dot"></span> 连接钱包</button>
         </div>
       </div>
-      <div class="deploy-step">
-        <div class="deploy-step-num">2</div>
-        <div class="deploy-step-body">
-          <h3>浏览器内编译</h3>
-          <p>solc 0.8.26 在浏览器内直接编译 <code>DBurnMintLaunchpad.sol</code> + <code>BurnToken.sol</code>，编译完成后输出 ABI（Launchpad 87 项 / BurnToken 69 项）。</p>
-        </div>
+
+      <!-- Wallet strip -->
+      <div class="lp-wallet-strip">
+        <div class="lp-ws-item"><span class="lp-ws-label">当前钱包</span><span id="lpWalletStatus" class="lp-ws-value">未连接</span></div>
+        <div class="lp-ws-item"><span class="lp-ws-label">网络</span><span id="lpNetworkStatus" class="lp-ws-value">未知</span></div>
       </div>
-      <div class="deploy-step">
-        <div class="deploy-step-num">3</div>
-        <div class="deploy-step-body">
-          <h3>部署 Launchpad 发射台</h3>
-          <p>钱包确认部署发射台合约，得到 Launchpad 地址。当前连接钱包自动作为 launchOperator / taxProcessor / stairTaxReceiver 默认值。</p>
+
+      <div class="lp-main-grid">
+        <!-- 左列：表单 -->
+        <div class="lp-col">
+          <!-- 基础信息 -->
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">📦</div><div><div class="eyebrow">Base Info</div><h4>基础信息</h4></div></div>
+            <div class="lp-field-grid">
+              <label>代币名称<input id="lpTokenName" placeholder="如 StockMint" /></label>
+              <label>代币符号<input id="lpTokenSymbol" placeholder="如 SPCX" /></label>
+              <label>总供应量<input id="lpTotalSupply" type="number" value="1000000" placeholder="1000000" /></label>
+              <label>BurnToken 实现地址<input id="lpImplementation" placeholder="留空自动部署本地实现" /></label>
+              <label>Router 地址<input id="lpRouter" placeholder="0x..." /></label>
+              <div class="lp-quote-block">
+                <div class="lp-quote-head">
+                  <span class="lp-quote-label">QuoteToken 地址</span>
+                  <select id="lpQuoteTokenPreset" class="lp-quote-preset">
+                    <option value="">快捷选择股票代币…</option>
+                    <option value="0xbe9d156892e55e7154bcd3cb0fea677f9d3103e1">SPCXB</option>
+                    <option value="0x205812cdbed920aff76c6580abd681a46d11efc7">QQQB</option>
+                    <option value="0x80106cb3ead06659a5ad19df39d9b4733863b9b0">MSFTB</option>
+                    <option value="0x46ceefda28dd7207059ed19b0acdc026955bb15c">GMEB</option>
+                    <option value="0xca750ef65f295bbecd685abf54e82caf297bdb61">SKHYB</option>
+                    <option value="0x02fca66c1d1afb4e2a7884261eb00f63598a7436">NVDAB</option>
+                    <option value="0x3548da95a9effe481e8604664d75e95821e557f5">BMNRB</option>
+                    <option value="0x7138b48df7d98d7e3cc221bfe7192d0a178182d8">SPYB</option>
+                    <option value="0x431a3bee82e2ca41e49895cbece5bb0f76a89b7a">AAPLB</option>
+                    <option value="0xa394dcea3fd3847fd793afbfd163e2e3858b7c65">HOODB</option>
+                    <option value="0x387dea1d2772d716d081a29116f3effa0ffe1f36">SMCIB</option>
+                    <option value="0x21caef8a43163eea865baee23b9c2e327696a3bf">XAUT</option>
+                    <option value="0x5b1910eaad6450e50f816082aa078c41f10c292f">TSLAB</option>
+                    <option value="0x4ef9d3062c7f6eba4aae4990c5036598c6eff4ec">BABAB</option>
+                    <option value="0xfdc2f2cab77b28f7ef6c819a404706cfa9bca33b">IRENB</option>
+                    <option value="">自定义（手动输入）</option>
+                  </select>
+                </div>
+                <input id="lpQuoteToken" placeholder="0x...（选择股票代币后自动填入，或手动输入）" />
+              </div>
+              <label>Pair 地址（可留空自动创建）<input id="lpPair" placeholder="0x..." /></label>
+              <label>税处理地址<input id="lpTaxProcessor" placeholder="0x..." /></label>
+              <label>阶梯税接收地址<input id="lpStairReceiver" placeholder="0x..." /></label>
+              <label>发射台管理员钱包<input id="lpOperator" placeholder="留空默认当前钱包" /></label>
+            </div>
+            <div id="lpDefaultsHint" class="lp-hint">连接钱包后会自动尝试填充默认地址。</div>
+          </article>
+
+          <!-- Mint 配置 -->
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">🪙</div><div><div class="eyebrow">Mint Config</div><h4>Mint 配置</h4></div></div>
+            <div class="lp-field-grid">
+              <label>Mint 支付方式
+                <select id="lpMintMode"><option value="BNB">BNB 原生支付</option><option value="USDT">自定义股票代币</option></select>
+              </label>
+              <label>单次 Mint 价格<input id="lpMintPrice" type="number" step="0.00000001" value="0.01" placeholder="0.01" /></label>
+              <label>单次 Mint 计数代币<input id="lpTokenPerMint" type="number" value="1000000" placeholder="1000000" /></label>
+              <label>最大 Mint 份数<input id="lpMaxMintCount" type="number" value="1" placeholder="100" /></label>
+              <label>单钱包最大 Mint 次数<input id="lpMaxMintPerWallet" type="number" value="1" placeholder="1" /></label>
+              <label>一钱包一次
+                <select id="lpOneWalletOnce"><option value="true">开启</option><option value="false">关闭</option></select>
+              </label>
+              <label>满额自动结束
+                <select id="lpAutoFinish"><option value="true">开启</option><option value="false">关闭</option></select>
+              </label>
+              <label>Mint 白名单模式
+                <select id="lpMintWlEnabled"><option value="false">关闭</option><option value="true">开启</option></select>
+              </label>
+            </div>
+            <label class="lp-full">初始 Mint 白名单（每行一个，可留空）
+              <textarea id="lpMintWlList" rows="3" placeholder="0xabc...&#10;0xdef..."></textarea>
+            </label>
+            <div class="lp-hint">「单次 Mint 计数代币 × 最大 Mint 份数」会形成整个 Mint 的覆盖代币量。部署完成后即可 Mint。若开启白名单，只有名单地址可参与。</div>
+          </article>
+
+          <!-- 用户到账配置 -->
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">💰</div><div><div class="eyebrow">Delivery</div><h4>用户到账配置</h4></div></div>
+            <div class="lp-field-grid">
+              <label>到账方式
+                <select id="lpUserReceiveMode"><option value="PROPORTIONAL">按比例</option><option value="FIXED">固定数量</option></select>
+              </label>
+              <label>用户到账比例 %<input id="lpUserReceiveShare" type="number" step="0.01" value="50" placeholder="50" /></label>
+              <label>用户每次到账数量<input id="lpUserReceiveFixed" type="number" value="500000" placeholder="500000" /></label>
+            </div>
+          </article>
+
+          <!-- 流动性配置 -->
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">🌊</div><div><div class="eyebrow">Liquidity</div><h4>流动性配置</h4></div></div>
+            <div class="lp-field-grid">
+              <label>募集资金进池比例 %<input id="lpLpFundShare" type="number" step="0.01" value="100" placeholder="100" /></label>
+              <label>进池代币模式
+                <select id="lpLpTokenMode"><option value="REMAINING">按剩余代币</option><option value="FIXED_AMOUNT">固定数量</option><option value="FIXED_SHARE">固定比例</option></select>
+              </label>
+              <label>进池代币固定数量<input id="lpLpTokenFixed" type="number" value="0" placeholder="100000" /></label>
+              <label>进池代币比例 %<input id="lpLpTokenShare" type="number" step="0.01" value="50" placeholder="50" /></label>
+              <label>LP 接收方式
+                <select id="lpLpReceiverMode"><option value="DEPLOYER">部署钱包</option><option value="LAUNCH_OPERATOR">管理员钱包</option><option value="CUSTOM">自定义钱包</option></select>
+              </label>
+              <label>自定义 LP 接收地址<input id="lpCustomLpReceiver" placeholder="0x..." /></label>
+            </div>
+            <div class="lp-hint">边 Mint 边加池模式：每次 Mint 都会按配置拆出资金和代币去加池。提前手动关闭 Mint 后，未发生的份额不再补加。</div>
+          </article>
+
+          <!-- DBURN 参数 -->
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">📈</div><div><div class="eyebrow">DBURN Params</div><h4>DBURN 参数</h4></div></div>
+            <div class="lp-field-grid">
+              <label>LaunchType
+                <select id="lpLaunchType"><option value="0">Direct</option><option value="1">Curve</option></select>
+              </label>
+              <label>交易开放时间<input id="lpTradingOpenTime" type="datetime-local" /></label>
+              <label>常规买税 %<input id="lpNormalBuyTax" type="number" step="0.01" value="3" placeholder="3" /></label>
+              <label>常规卖税 %<input id="lpNormalSellTax" type="number" step="0.01" value="3" placeholder="3" /></label>
+              <label>每小时池子燃烧比例 %<input id="lpPoolBurnPerHour" type="number" step="0.01" value="0" placeholder="0" /></label>
+              <label>最小池子代币阈值<input id="lpMinPoolBalance" type="number" value="0" placeholder="0" /></label>
+            </div>
+            <div class="lp-panel-sub">阶梯税（最多 3 档）</div>
+            <div class="lp-field-grid">
+              <label>第 1 档结束秒数<input id="lpTaxPhase1End" type="number" value="300" placeholder="300" /></label>
+              <label>第 1 档买税 %<input id="lpTaxPhase1Buy" type="number" step="0.01" value="8" placeholder="8" /></label>
+              <label>第 1 档卖税 %<input id="lpTaxPhase1Sell" type="number" step="0.01" value="12" placeholder="12" /></label>
+              <label>第 2 档结束秒数<input id="lpTaxPhase2End" type="number" value="900" placeholder="900" /></label>
+              <label>第 2 档买税 %<input id="lpTaxPhase2Buy" type="number" step="0.01" value="5" placeholder="5" /></label>
+              <label>第 2 档卖税 %<input id="lpTaxPhase2Sell" type="number" step="0.01" value="8" placeholder="8" /></label>
+              <label>第 3 档结束秒数<input id="lpTaxPhase3End" type="number" value="1800" placeholder="1800" /></label>
+              <label>第 3 档买税 %<input id="lpTaxPhase3Buy" type="number" step="0.01" value="3" placeholder="3" /></label>
+              <label>第 3 档卖税 %<input id="lpTaxPhase3Sell" type="number" step="0.01" value="5" placeholder="5" /></label>
+            </div>
+            <label class="lp-full">税阶段 JSON 预览
+              <textarea id="lpTaxPhasesJson" rows="5" readonly>[]</textarea>
+            </label>
+            <div class="lp-hint">Direct 适合普通开盘；Curve 适合迁移模式（配合 markMigrated）。某档结束秒数填 0 表示不启用该档。</div>
+          </article>
+
+          <!-- 自动回购销毁 -->
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">🔥</div><div><div class="eyebrow">Buyback Burn</div><h4>自动回购销毁</h4></div></div>
+            <div class="lp-field-grid">
+              <label>启用自动回购处理器
+                <select id="lpBuybackEnabled"><option value="false">关闭</option><option value="true">开启</option></select>
+              </label>
+              <label>处理器地址（可留空自动部署）<input id="lpBuybackProcessor" placeholder="0x..." /></label>
+              <label>回购间隔秒数<input id="lpBuybackInterval" type="number" value="60" placeholder="60" /></label>
+              <label>单次回购花费 QuoteToken<input id="lpBuybackSpend" type="number" step="0.00000001" value="0.01" placeholder="0.01" /></label>
+              <label>每次最多卖出税代币数量<input id="lpBuybackMaxSwap" type="number" value="0" placeholder="0=不限制" /></label>
+              <label>仅卖出时触发
+                <select id="lpBuybackOnlySell"><option value="true">开启</option><option value="false">关闭</option></select>
+              </label>
+            </div>
+            <div class="lp-hint">开启后由外部处理器接管常规税处理：交易时顺带把积累的税代币换成 QuoteToken，再按间隔固定额度回购本币打入黑洞。Gas 由触发交易的用户支付。</div>
+          </article>
         </div>
-      </div>
-      <div class="deploy-step">
-        <div class="deploy-step-num">4</div>
-        <div class="deploy-step-body">
-          <h3>写入 Launch 配置</h3>
-          <p>写入代币名称、符号、总供应量、Mint 价格与份数、白名单、税率、流动性分配、交易开放时间等全部启动参数。</p>
-        </div>
-      </div>
-      <div class="deploy-step">
-        <div class="deploy-step-num">5</div>
-        <div class="deploy-step-body">
-          <h3>部署 BurnToken 主代币</h3>
-          <p>Clone 部署主代币合约，按 <code>tradingOpenTime</code> 时间自动开盘（非手动 <code>openTrading()</code>）。</p>
-        </div>
-      </div>
-      <div class="deploy-step">
-        <div class="deploy-step-num">6</div>
-        <div class="deploy-step-body">
-          <h3>创建 / 读取 Pair</h3>
-          <p>Pair 地址可留空，部署后自动创建 Pancake V2 交易对，或读取已存在的 Pair 地址。</p>
-        </div>
-      </div>
-      <div class="deploy-step">
-        <div class="deploy-step-num">7</div>
-        <div class="deploy-step-body">
-          <h3>初始化 Token</h3>
-          <p>初始化主代币合约，绑定发射台与交易对，完成代币启动前的最后配置。</p>
-        </div>
-      </div>
-      <div class="deploy-step">
-        <div class="deploy-step-num">8</div>
-        <div class="deploy-step-body">
-          <h3>开启 Mint</h3>
-          <p>开启 Mint 通道，用户即可用 BNB 或指定股票代币参与 Mint。满额自动结束，或后台手动关闭。</p>
+
+        <!-- 右列：预览 + 结果 -->
+        <div class="lp-col">
+          <article class="lp-panel lp-preview-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">🧮</div><div><div class="eyebrow">Live Preview</div><h4>部署预览</h4></div></div>
+            <div class="lp-preview-list">
+              <div><span>预计总募集</span><strong id="lpPreviewRaise">-</strong></div>
+              <div><span>Mint 覆盖代币</span><strong id="lpPreviewMintCoverage">-</strong></div>
+              <div><span>用户总代币</span><strong id="lpPreviewUserTokens">-</strong></div>
+              <div><span>流动性资金</span><strong id="lpPreviewLpFunds">-</strong></div>
+              <div><span>流动性代币</span><strong id="lpPreviewLpTokens">-</strong></div>
+              <div><span>剩余预留</span><strong id="lpPreviewReserved">-</strong></div>
+              <div><span>LP 去向</span><strong id="lpPreviewLpReceiver">-</strong></div>
+              <div><span>单次用户到账</span><strong id="lpPreviewUserPerMint">-</strong></div>
+            </div>
+            <div id="lpPreviewChecks" class="lp-check-list"></div>
+            <div class="lp-btn-row">
+              <button id="lpCompileBtn" class="lp-btn lp-btn-secondary">🛠 编译</button>
+              <button id="lpDeployBtn" class="lp-btn lp-btn-mint">⚡ 一键部署</button>
+            </div>
+            <div id="lpDeployLog" class="lp-log">等待操作</div>
+          </article>
+
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">✅</div><div><div class="eyebrow">Result</div><h4>部署结果</h4></div></div>
+            <div class="lp-field-grid">
+              <label>Launchpad 地址<input id="lpResultLaunchpad" readonly /></label>
+              <label>Token 地址<input id="lpResultToken" readonly /></label>
+              <label>回购处理器地址<input id="lpResultBuyback" readonly /></label>
+              <label>Mint 页面链接<input id="lpResultMintLink" readonly /></label>
+            </div>
+            <div class="lp-hint">部署完成后会自动填充下方「Mint 参与」区并读取状态。复制链接可发给用户直接参与 Mint。</div>
+          </article>
+
+          <!-- 部署须知 -->
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">📌</div><div><div class="eyebrow">Version Notes</div><h4>当前版本重要前提</h4></div></div>
+            <div class="lp-notes">
+              <div class="lp-note"><b>1</b><span>BurnToken 按 <code>tradingOpenTime</code> 自动开盘，不是手动 <code>openTrading()</code>。</span></div>
+              <div class="lp-note"><b>2</b><span>开启交易在本版本体现为「同步交易状态」。</span></div>
+              <div class="lp-note"><b>3</b><span>Pair 地址可留空，部署后自动创建或读取。</span></div>
+              <div class="lp-note"><b>4</b><span>LP 分红不在这个版本里。</span></div>
+              <div class="lp-note"><b>5</b><span>Mint 无结束时间，满额自动结束或手动关闭。</span></div>
+            </div>
+          </article>
         </div>
       </div>
     </div>
 
-    <!-- Connected features -->
-    <div class="deploy-block">
-      <div class="deploy-block-head">
-        <div class="eyebrow">Ready Features</div>
-        <h3>已接好的功能</h3>
-        <p>从部署到后台管理，全生命周期功能均已接通。</p>
-      </div>
-      <div class="deploy-tags">
-        <span class="deploy-tag">连接钱包</span>
-        <span class="deploy-tag">浏览器内编译</span>
-        <span class="deploy-tag">部署 Launchpad</span>
-        <span class="deploy-tag">写入 Launch 配置</span>
-        <span class="deploy-tag">部署 BurnToken Clone</span>
-        <span class="deploy-tag">自动创建或读取 Pair</span>
-        <span class="deploy-tag">初始化 Token</span>
-        <span class="deploy-tag">读取 Mint 状态</span>
-        <span class="deploy-tag">BNB Mint</span>
-        <span class="deploy-tag">股票代币 Mint</span>
-        <span class="deploy-tag">后台加载合约</span>
-        <span class="deploy-tag">开启 Mint</span>
-        <span class="deploy-tag">关闭 Mint</span>
-        <span class="deploy-tag">结算 Mint</span>
-        <span class="deploy-tag">批量发币</span>
-        <span class="deploy-tag">注入库存</span>
-        <span class="deploy-tag">添加流动性</span>
-        <span class="deploy-tag">查看 LP 去向</span>
-        <span class="deploy-tag">提取多余募集</span>
-        <span class="deploy-tag">同步交易状态</span>
-        <span class="deploy-tag">更新税白名单</span>
-        <span class="deploy-tag">执行池子燃烧</span>
-        <span class="deploy-tag">标记迁移</span>
-      </div>
-    </div>
-
-    <!-- Params + verify -->
-    <div class="deploy-grid">
-      <div class="deploy-panel">
-        <div class="deploy-block-head">
-          <div class="eyebrow">Launch Params</div>
-          <h3>部署参数（BSC 主网自动填入）</h3>
+    <!-- ===== Mint 参与区（部署后使用） ===== -->
+    <div class="lp-shell lp-mint-shell" id="deploy-mint" style="margin-top: 22px;">
+      <div class="lp-topbar">
+        <div class="lp-topbar-left">
+          <div class="eyebrow">Mint Participation</div>
+          <h3 class="lp-title">Mint 参与</h3>
         </div>
-        <div class="spec-wrap">
-          <table class="spec-table">
-            <thead><tr><th>参数</th><th>默认行为</th></tr></thead>
-            <tbody>
-              <tr><td>Pancake V2 Router</td><td>连接钱包后自动填入</td></tr>
-              <tr><td>WBNB（BNB 模式）</td><td>连接钱包后自动填入</td></tr>
-              <tr><td>USDT（USDT 模式）</td><td>连接钱包后自动填入</td></tr>
-              <tr><td>launchOperator</td><td>默认为当前连接钱包</td></tr>
-              <tr><td>taxProcessor</td><td>默认为当前连接钱包</td></tr>
-              <tr><td>stairTaxReceiver</td><td>默认为当前连接钱包</td></tr>
-              <tr><td>Pair 地址</td><td>可留空，部署后自动创建或读取</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <span class="lp-badge lp-badge-ok">读取 Launchpad 后参与</span>
       </div>
 
-      <div class="deploy-panel">
-        <div class="deploy-block-head">
-          <div class="eyebrow">Source Verify</div>
-          <h3>开源验证配置</h3>
+      <div class="lp-main-grid">
+        <div class="lp-col">
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">🚀</div><div><div class="eyebrow">Launch Status</div><h4>发射状态</h4></div></div>
+            <label class="lp-full">Launchpad 地址<input id="lpMintLaunchpad" placeholder="0x...（部署完成后自动填入）" /></label>
+            <div class="lp-btn-row">
+              <button id="lpMintLoadBtn" class="lp-btn lp-btn-secondary">📖 读取</button>
+              <button id="lpMintBtn" class="lp-btn lp-btn-mint">⚡ 立即 Mint</button>
+            </div>
+            <div id="lpMintLog" class="lp-log">等待操作</div>
+            <div class="lp-stats">
+              <div><span>阶段</span><strong id="lpMintStatus">-</strong></div>
+              <div><span>价格</span><strong id="lpMintPagePrice">-</strong></div>
+              <div><span>单次计数代币</span><strong id="lpMintPageTokenPerMint">-</strong></div>
+              <div><span>进度</span><strong id="lpMintPageProgress">-</strong></div>
+              <div><span>QuoteToken</span><strong id="lpMintPageQuoteToken">-</strong></div>
+            </div>
+          </article>
         </div>
-        <div class="spec-wrap">
-          <table class="spec-table">
-            <thead><tr><th>配置项</th><th>值</th></tr></thead>
-            <tbody>
-              <tr><td>Solidity</td><td>0.8.26</td></tr>
-              <tr><td>optimizer</td><td>enabled</td></tr>
-              <tr><td>runs</td><td>200</td></tr>
-              <tr><td>viaIR</td><td>true</td></tr>
-              <tr><td>evmVersion</td><td>cancun</td></tr>
-              <tr><td>Launchpad 验证文件</td><td><code>launchpad-standard-input.json</code></td></tr>
-              <tr><td>BurnToken 验证文件</td><td><code>burntoken-standard-input.json</code></td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
 
-    <!-- Prerequisites -->
-    <div class="deploy-block" style="margin-top: 34px;">
-      <div class="deploy-block-head">
-        <div class="eyebrow">Version Notes</div>
-        <h3>当前版本重要前提</h3>
-      </div>
-      <div class="deploy-notes">
-        <div class="deploy-note"><b>1</b><span>BurnToken 按 <code>tradingOpenTime</code> 时间自动开盘，不是 <code>openTrading()</code> 式手动开盘。</span></div>
-        <div class="deploy-note"><b>2</b><span>后台页的「开启交易」逻辑，在本版本体现为「同步交易状态」。</span></div>
-        <div class="deploy-note"><b>3</b><span>Pair 地址可以留空，部署后会自动尝试创建或读取。</span></div>
-        <div class="deploy-note"><b>4</b><span>LP 分红不在这个版本里。</span></div>
-        <div class="deploy-note"><b>5</b><span>Mint 没有结束时间，满额自动结束，或者后台手动关闭。</span></div>
+        <div class="lp-col">
+          <article class="lp-panel">
+            <div class="lp-panel-head"><div class="lp-panel-icon">👤</div><div><div class="eyebrow">My Participation</div><h4>我的参与</h4></div></div>
+            <div class="lp-stats">
+              <div><span>参与次数</span><strong id="lpMyMintCount">0</strong></div>
+              <div><span>支付总额</span><strong id="lpMyMintPaid">0</strong></div>
+              <div><span>已记到账</span><strong id="lpMyMintTokens">0</strong></div>
+              <div><span>是否已发币</span><strong id="lpMyMintDelivered">否</strong></div>
+            </div>
+            <div class="lp-hint" style="margin-top: 14px;">BNB 模式直接支付 Mint；QuoteToken 模式首次会自动授权。每次 Mint 成功后即时发币、即时加池。</div>
+          </article>
+        </div>
       </div>
     </div>
   </div>
@@ -195,11 +307,12 @@
 
 <footer class="footer">
   <div class="container">
-    <p><a href="index.html">← 返回首页</a> · StockMint 股票Mint发射台 · 部署指南</p>
+    <p><a href="index.html">← 返回首页</a> · StockMint 股票Mint发射台 · 任意股票代币作为 Mint 资金</p>
   </div>
 </footer>
 
 <script>
+// Ticker data (shared)
 const tickerStocks = [
   { sym: "SPCX", price: "5783.43", change: "+0.84%", up: true },
   { sym: "QQQB", price: "20456.78", change: "+1.25%", up: true },
@@ -220,16 +333,37 @@ const tickerStocks = [
   { sym: "PLTR", price: "67.89", change: "+5.67%", up: true },
   { sym: "COIN", price: "289.45", change: "+4.56%", up: true },
 ];
+
 function renderTicker() {
   const track = document.getElementById("tickerTrack");
   const items = [...tickerStocks, ...tickerStocks].map(s => {
     const cls = s.up ? "up" : "down";
-    const arrow = s.up ? "▲" : "▼";
+    const arrow = s.up ? "\u25B2" : "\u25BC";
     return `<div class="ticker-item"><span class="ts">${s.sym}</span><span class="tp">$${s.price}</span><span class="tc ${cls}">${arrow} ${s.change}</span></div>`;
   }).join("");
   track.innerHTML = items;
 }
 renderTicker();
+
+// 快捷选择股票代币 → 自动填入 QuoteToken 地址
+// 独立于 launchpad.js 的兜底逻辑：即使 ethers CDN 模块加载失败也能正常工作
+(function () {
+  const preset = document.getElementById("lpQuoteTokenPreset");
+  const quote = document.getElementById("lpQuoteToken");
+  const mintMode = document.getElementById("lpMintMode");
+  if (!preset || !quote) return;
+  preset.addEventListener("change", function () {
+    const address = preset.value;
+    if (!address) return;
+    quote.value = address;
+    if (mintMode) mintMode.value = "USDT";
+    quote.classList.remove("lp-flash");
+    void quote.offsetWidth; // 重启动画
+    quote.classList.add("lp-flash");
+    // 通知已加载的 launchpad.js 重新计算预览
+    document.dispatchEvent(new CustomEvent("lp-preset-changed", { detail: { address } }));
+  });
+})();
 </script>
 
 </body>
