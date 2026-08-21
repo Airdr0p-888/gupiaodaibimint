@@ -171,9 +171,10 @@ function updateRing(pct) {
   const ring = document.querySelector(".sm-ring-fill");
   const pctEl = $("smProgressPct");
   const textEl = $("smProgressText");
-  if (ring) ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - Math.min(100, Math.max(0, pct)) / 100);
-  if (pctEl) pctEl.textContent = `${pct.toFixed(1)}%`;
-  if (textEl) textEl.textContent = `${state.mintedCount} / ${state.maxMintCount}`;
+  const safePct = typeof pct === "number" && !Number.isNaN(pct) ? Math.min(100, Math.max(0, pct)) : 0;
+  if (ring) ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - safePct / 100);
+  if (pctEl) pctEl.textContent = `${safePct.toFixed(1)}%`;
+  if (textEl) textEl.textContent = `${state.mintedCount || 0} / ${state.maxMintCount || 0}`;
 }
 
 /* ---------- 数据卡片 ---------- */
@@ -314,44 +315,51 @@ async function silentConnect() {
   }
 }
 
+/** 安全读取合约字段，失败返回默认值 */
+async function safeRead(fn, fallback = null) {
+  try {
+    return await fn();
+  } catch (err) {
+    console.warn("contract read skipped:", err?.shortMessage || err?.message || err);
+    return fallback;
+  }
+}
+
 /** 读取合约数据（兼容只读/签名者两种模式） */
 async function refreshContract() {
   if (!state.contract) return;
 
-  const [
-    name, symbol, decimals, mode, mintPrice, tokenPerMint,
-    mintedCount, maxMintCount, mintEnabled, whitelistEnabled
-  ] = await Promise.all([
-    state.contract.name(),
-    state.contract.symbol(),
-    state.contract.decimals(),
-    state.contract.mintMode(),
-    state.contract.mintPrice(),
-    state.contract.tokenPerMint(),
-    state.contract.mintedCount(),
-    state.contract.maxMintCount(),
-    state.contract.mintEnabled(),
-    state.contract.whitelistEnabled()
-  ]);
+  // 核心字段独立读取，避免一个 view 失败导致整页不渲染
+  const name = await safeRead(() => state.contract.name(), "Unknown");
+  const symbol = await safeRead(() => state.contract.symbol(), "TOKEN");
+  const decimals = await safeRead(() => state.contract.decimals(), 18n);
+  const mode = await safeRead(() => state.contract.mintMode(), 0n);
+  const mintPrice = await safeRead(() => state.contract.mintPrice(), 0n);
+  const tokenPerMint = await safeRead(() => state.contract.tokenPerMint(), 0n);
+  const mintedCount = await safeRead(() => state.contract.mintedCount(), 0n);
+  const maxMintCount = await safeRead(() => state.contract.maxMintCount(), 0n);
+  const mintEnabled = await safeRead(() => state.contract.mintEnabled(), false);
+  const whitelistEnabled = await safeRead(() => state.contract.whitelistEnabled(), false);
 
   // 分红储备（公开数据，尽力读取）
-  let dividendReserve = null, minTokenDividendBalance = null;
-  try {
-    dividendReserve = await state.contract.dividendReserveView().catch(() => state.contract.dividendReserve());
-  } catch { /* ignore */ }
-  try {
-    minTokenDividendBalance = await state.contract.minTokenDividendBalanceView().catch(() => state.contract.minTokenDividendBalance());
-  } catch { /* ignore */ }
+  let dividendReserve = await safeRead(
+    () => state.contract.dividendReserveView().catch(() => state.contract.dividendReserve()),
+    null
+  );
+  let minTokenDividendBalance = await safeRead(
+    () => state.contract.minTokenDividendBalanceView().catch(() => state.contract.minTokenDividendBalance()),
+    null
+  );
 
-  state.tokenDecimals = Number(decimals);
-  state.mode = Number(mode);
+  state.tokenDecimals = Number(decimals) || 18;
+  state.mode = Number(mode) || 0;
   state.rewardSymbol = state.mode === 0 ? state.nativeSymbol : "TOKEN";
   state.rewardDecimals = 18;
   state.mintPaySymbol = state.mode === 0 ? state.nativeSymbol : "TOKEN";
   state.mintPayDecimals = 18;
-  state.mintEnabled = mintEnabled;
-  state.mintedCount = Number(mintedCount);
-  state.maxMintCount = Number(maxMintCount);
+  state.mintEnabled = !!mintEnabled;
+  state.mintedCount = Number(mintedCount) || 0;
+  state.maxMintCount = Number(maxMintCount) || 0;
 
   let whitelistStatus = state.readOnly ? "连接钱包后查看" : "未开启";
   let hasMinted = state.readOnly ? null : false;
@@ -625,3 +633,19 @@ if (document.readyState === "loading") {
 } else {
   initMint();
 }
+
+/* ---------- 平台介绍面板：点击复制 QQ / 群号 ---------- */
+document.addEventListener("click", (e) => {
+  const chip = e.target.closest(".sm-intro-chip[data-copy]");
+  if (!chip) return;
+  const copyText = chip.dataset.copy;
+  const label = chip.dataset.label || chip.textContent.trim();
+  navigator.clipboard?.writeText(copyText).then(() => {
+    chip.textContent = "✓ 已复制 " + copyText;
+    chip.classList.add("copied");
+    setTimeout(() => {
+      chip.textContent = label;
+      chip.classList.remove("copied");
+    }, 1600);
+  }).catch(() => {});
+});
