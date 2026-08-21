@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>StockMint · 股票Mint发射台</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="mint.js"></script>
+</head>
+<body>
+
+<!-- Stock Ticker Tape -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="nav-mark">S</div>
+    <div>
+      <div class="nav-title"><span class="gold">Stock</span>Mint</div>
+      <div class="nav-sub">股票 Mint 发射台</div>
+    </div>
+  </div>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+  <div class="nav-links">
+    <a href="index.html" class="active">首页</a>
+    <a href="features.html">功能展示</a>
+    <a href="lifecycle.html">发射流程</a>
+    <a href="pages.html">页面结构</a>
+    <a href="stocks.html">可用股票</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-badge"><span class="dot"></span> BSC Chain · 任意股票代币作为 Mint 资金 · EVM Compatible</div>
+    <h1><span class="grad">StockMint</span><br/>股票 Mint 发射台</h1>
+    <p>首创「任意股票代币作为 Mint 资金」模式。用户可用 SPCX、QQQB、AAPL、TSLA 等任意股票代币参与 Mint，不再局限于 BNB/USDT。部署者可自由指定 Mint 接受的股票代币类型。</p>
+    <div class="hero-cta">
+      <a href="#mint" class="btn btn-primary">Mint 交互台 →</a>
+      <a href="features.html" class="btn btn-ghost">功能展示</a>
+      <a href="stocks.html" class="btn btn-ghost">可用股票代币</a>
+    </div>
+    <div class="hero-highlight">
+      <div class="hl-icon">★</div>
+      <div class="hl-text">
+        <div class="hl-title">核心亮点：任意股票作为 Mint 资金</div>
+        <div class="hl-desc">部署时指定接受哪种股票代币（如 SPCX/QQQB/AAPL/TSLA），用户用该股票代币支付即可参与 Mint。支持股票代币与 BNB/USDT 混合模式。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Market Indices Dashboard -->
+<section class="section" style="padding-top: 20px;">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Market Overview</div>
+      <h2 class="section-title">美股大盘指数</h2>
+      <p class="section-desc">实时追踪美股主要指数行情，StockMint 支持的股票代币均锚定以下标的资产。</p>
+    </div>
+    <div class="market-dash">
+      <div class="index-card up">
+        <div class="idx-name">S&P 500 · SPCX</div>
+        <div class="idx-val">5,783.43</div>
+        <div class="idx-chg up">▲ +48.21 (+0.84%)</div>
+        <svg class="idx-spark" width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#ff4444" stroke-width="1.5" points="0,28 20,24 40,26 60,18 80,20 100,14 120,16 140,10 160,12 180,6 200,4"/>
+          <polygon fill="rgba(255,68,68,0.08)" stroke="none" points="0,28 20,24 40,26 60,18 80,20 100,14 120,16 140,10 160,12 180,6 200,4 200,36 0,36"/>
+        </svg>
+        <div class="idx-bar" style="width:100%;"></div>
+      </div>
+      <div class="index-card up">
+        <div class="idx-name">Nasdaq 100 · QQQB</div>
+        <div class="idx-val">20,456.78</div>
+        <div class="idx-chg up">▲ +253.41 (+1.25%)</div>
+        <svg class="idx-spark" width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#ff4444" stroke-width="1.5" points="0,30 20,22 40,24 60,16 80,18 100,10 120,12 140,8 160,6 180,4 200,2"/>
+          <polygon fill="rgba(255,68,68,0.08)" stroke="none" points="0,30 20,22 40,24 60,16 80,18 100,10 120,12 140,8 160,6 180,4 200,2 200,36 0,36"/>
+        </svg>
+        <div class="idx-bar" style="width:100%;"></div>
+      </div>
+      <div class="index-card up">
+        <div class="idx-name">Dow Jones · DIAB</div>
+        <div class="idx-val">42,154.67</div>
+        <div class="idx-chg up">▲ +236.89 (+0.57%)</div>
+        <svg class="idx-spark" width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#ff4444" stroke-width="1.5" points="0,26 20,28 40,22 60,24 80,18 100,20 120,14 140,16 160,10 180,12 200,8"/>
+          <polygon fill="rgba(255,68,68,0.08)" stroke="none" points="0,26 20,28 40,22 60,24 80,18 100,20 120,14 140,16 160,10 180,12 200,8 200,36 0,36"/>
+        </svg>
+        <div class="idx-bar" style="width:100%;"></div>
+      </div>
+      <div class="index-card down">
+        <div class="idx-name">VIX · VIXB</div>
+        <div class="idx-val">15.43</div>
+        <div class="idx-chg down">▼ -0.55 (-3.44%)</div>
+        <svg class="idx-spark" width="100%" height="36" viewBox="0 0 200 36" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#00c853" stroke-width="1.5" points="0,8 20,10 40,6 60,12 80,10 100,16 120,14 140,20 160,22 180,24 200,28"/>
+          <polygon fill="rgba(0,200,83,0.08)" stroke="none" points="0,8 20,10 40,6 60,12 80,10 100,16 120,14 140,20 160,22 180,24 200,28 200,36 0,36"/>
+        </svg>
+        <div class="idx-bar" style="width:100%;"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Module navigation -->
+<section class="section" style="padding-top: 0;">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Modules</div>
+      <h2 class="section-title">功能模块导航</h2>
+      <p class="section-desc">点击下方模块进入对应页面查看详细展示。</p>
+    </div>
+    <div class="arch-grid">
+      <a href="features.html" style="text-decoration:none;color:inherit;">
+        <div class="arch-card">
+          <div class="arch-icon" style="background: rgba(240,185,11,0.15);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          </div>
+          <h3>功能展示</h3>
+          <p>12 个核心功能模块，亮点是任意股票代币作为 Mint 资金、白名单管理、阶梯税、自动回购销毁等。</p>
+        </div>
+      </a>
+      <a href="lifecycle.html" style="text-decoration:none;color:inherit;">
+        <div class="arch-card">
+          <div class="arch-icon" style="background: rgba(61,213,152,0.15);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3dd598" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <h3>发射流程</h3>
+          <p>七阶段生命周期：未初始化 → 已准备 → Mint 进行中 → 已关闭 → 已结算 → 流动性已注入 → 交易已开放。</p>
+        </div>
+      </a>
+      <a href="pages.html" style="text-decoration:none;color:inherit;">
+        <div class="arch-card">
+          <div class="arch-icon" style="background: rgba(255,204,102,0.15);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ffcc66" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </div>
+          <h3>页面结构</h3>
+          <p>部署页、Mint 页、后台页三大页面，各自的功能配置区块和操作按钮。</p>
+        </div>
+      </a>
+      <a href="stocks.html" style="text-decoration:none;color:inherit;">
+        <div class="arch-card">
+          <div class="arch-icon" style="background: rgba(239,68,68,0.15);">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 4 4 6-6"/></svg>
+          </div>
+          <h3>可用股票代币</h3>
+          <p>美股市值 Top 20 股票代币，均可用作 Mint 资金。AAPL、NVDA、MSFT、TSLA、GOOGL 等，含公司 Logo 和实时行情。</p>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ===== Live Mint Interface ===== -->
+<section class="section" id="mint" style="padding-top: 0;">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Live Mint</div>
+      <h2 class="section-title">Mint 交互台</h2>
+      <p class="section-desc">连接钱包后，输入代币合约地址即可参与 Mint 或领取分红。支持 BNB 原生支付和 ERC20 股票代币支付两种模式。</p>
+    </div>
+
+    <div class="sm-shell">
+      <!-- Top bar: title + connect -->
+      <div class="sm-topbar">
+        <div class="sm-topbar-left">
+          <div class="eyebrow">StockMint Fair Mint</div>
+          <h3 id="smTokenTitle" class="sm-token-title">输入合约地址开始</h3>
+        </div>
+        <button id="smConnectWallet" class="sm-btn sm-btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+          连接钱包
+        </button>
+      </div>
+
+      <!-- Wallet strip -->
+      <div class="sm-wallet-strip">
+        <div class="sm-ws-item">
+          <div class="sm-ws-label"><span class="sm-ws-dot" id="smWalletDot"></span> 当前钱包</div>
+          <div class="sm-ws-value" id="smWalletAddress">未连接</div>
+        </div>
+        <div class="sm-ws-item">
+          <div class="sm-ws-label">网络</div>
+          <div class="sm-ws-value" id="smNetworkName">未知</div>
+        </div>
+      </div>
+
+      <!-- Contract loader -->
+      <div class="sm-contract-loader">
+        <label>
+          <span class="sm-input-label">合约地址</span>
+          <input id="smContractAddress" placeholder="0x0d9c...8888（默认），可粘贴其他合约地址" />
+        </label>
+        <button id="smLoadContract" class="sm-btn sm-btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          读取合约
+        </button>
+      </div>
+
+      <!-- Action grid: Mint + Rewards -->
+      <div class="sm-action-grid">
+        <article class="sm-panel">
+          <div class="sm-panel-head">
+            <div>
+              <div class="eyebrow">Mint</div>
+              <h4 class="sm-panel-title">参与 Mint</h4>
+            </div>
+            <span id="smMintModeBadge" class="sm-badge">未读取</span>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="sm-mint-progress" id="smMintProgress">
+            <div class="sm-progress-track"><div class="sm-progress-fill" style="width:0%"></div></div>
+            <div class="sm-progress-text">-- / --</div>
+          </div>
+
+          <div id="smMintStats" class="sm-stats"></div>
+          <button id="smMintNow" class="sm-btn sm-btn-mint" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            立即 Mint
+          </button>
+        </article>
+
+        <article class="sm-panel">
+          <div class="sm-panel-head">
+            <div>
+              <div class="eyebrow">Rewards</div>
+              <h4 class="sm-panel-title">领取分红</h4>
+            </div>
+            <span id="smRewardUnitBadge" class="sm-badge">-</span>
+          </div>
+          <div id="smRewardStats" class="sm-stats"></div>
+          <button id="smClaimDividends" class="sm-btn sm-btn-claim">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            领取分红
+          </button>
+        </article>
+      </div>
+
+      <!-- Log -->
+      <div class="sm-log-wrap">
+        <div class="sm-log-head">
+          <span class="sm-log-dot"></span> 交易日志
+        </div>
+        <div id="smLog" class="sm-log"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="nav-brand" style="justify-content:center; margin-bottom:12px;">
+      <div class="nav-mark">S</div>
+      <div class="nav-title"><span class="gold">Stock</span>Mint · 股票Mint发射台</div>
+    </div>
+    <p>功能展示平台 · BSC Chain · 任意股票代币作为 Mint 资金</p>
+  </div>
+</footer>
+
+<script>
+// Ticker data
+const tickerStocks = [
+  { sym: "SPCX", price: "5783.43", change: "+0.84%", up: true },
+  { sym: "QQQB", price: "20456.78", change: "+1.25%", up: true },
+  { sym: "DIAB", price: "42154.67", change: "+0.57%", up: true },
+  { sym: "AAPL", price: "229.87", change: "+1.23%", up: true },
+  { sym: "NVDA", price: "138.67", change: "+4.56%", up: true },
+  { sym: "TSLA", price: "356.78", change: "-2.34%", up: false },
+  { sym: "MSFT", price: "423.45", change: "+0.89%", up: true },
+  { sym: "GOOGL", price: "178.34", change: "+1.56%", up: true },
+  { sym: "AMZN", price: "186.45", change: "+2.34%", up: true },
+  { sym: "META", price: "567.89", change: "+3.12%", up: true },
+  { sym: "GLDB", price: "245.67", change: "+2.34%", up: true },
+  { sym: "IBIT", price: "52.34", change: "+3.67%", up: true },
+  { sym: "VIXB", price: "15.43", change: "-3.44%", up: false },
+  { sym: "JPM", price: "234.56", change: "+1.12%", up: true },
+  { sym: "LLY", price: "789.45", change: "+3.45%", up: true },
+  { sym: "AMD", price: "134.56", change: "+3.45%", up: true },
+  { sym: "PLTR", price: "67.89", change: "+5.67%", up: true },
+  { sym: "COIN", price: "289.45", change: "+4.56%", up: true },
+];
+
+function renderTicker() {
+  const track = document.getElementById("tickerTrack");
+  // Duplicate for seamless loop
+  const items = [...tickerStocks, ...tickerStocks].map(s => {
+    const cls = s.up ? "up" : "down";
+    const arrow = s.up ? "▲" : "▼";
+    return `<div class="ticker-item"><span class="ts">${s.sym}</span><span class="tp">$${s.price}</span><span class="tc ${cls}">${arrow} ${s.change}</span></div>`;
+  }).join("");
+  track.innerHTML = items;
+}
+renderTicker();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>页面结构 · StockMint</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Stock Ticker Tape -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="nav-mark">S</div>
+    <div><div class="nav-title"><span class="gold">Stock</span>Mint</div><div class="nav-sub">股票 Mint 发射台</div></div>
+  </div>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+  <div class="nav-links">
+    <a href="index.html">首页</a>
+    <a href="features.html">功能展示</a>
+    <a href="lifecycle.html">发射流程</a>
+    <a href="pages.html" class="active">页面结构</a>
+    <a href="stocks.html">可用股票</a>
+  </div>
+</nav>
+
+<section class="section page-wrap">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Page Structure</div>
+      <h2 class="section-title">三页面结构</h2>
+      <p class="section-desc">部署页配置参数（含选择 Mint 股票代币）并部署合约，Mint 页供用户用股票代币参与，后台页管理全生命周期。</p>
+    </div>
+    <div class="pages-grid">
+      <div class="page-preview">
+        <div class="page-preview-header" style="padding:0 0 20px;">
+          <h3>部署页 (Deploy)</h3>
+          <p>面向部署方和项目运营方</p>
+        </div>
+        <div style="padding-top:0;">
+          <div class="page-section-item"><div class="icon">A</div><div class="text"><strong>基础信息</strong> — 代币名称、符号、总供应量、Router/QuoteToken/Pair 地址</div></div>
+          <div class="page-section-item"><div class="icon">B</div><div class="text"><strong>Mint 配置</strong> — 模式、价格、单次计数、最大份数、白名单、<strong style="color:var(--accent);">接受的股票代币</strong></div></div>
+          <div class="page-section-item"><div class="icon">C</div><div class="text"><strong>用户到账</strong> — 按比例/固定数量、到账比例</div></div>
+          <div class="page-section-item"><div class="icon">D</div><div class="text"><strong>流动性配置</strong> — 募资进池比例、进池代币模式、LP 接收</div></div>
+          <div class="page-section-item"><div class="icon">E</div><div class="text"><strong>交易设置</strong> — 发射类型、交易开放时间</div></div>
+          <div class="page-section-item"><div class="icon">F</div><div class="text"><strong>税率参数</strong> — 常规买/卖税、阶梯税 3 档、池子燃烧</div></div>
+          <div class="page-section-item"><div class="icon">G</div><div class="text"><strong>部署预览</strong> — 总募集、用户代币、流动性分配实时计算</div></div>
+          <div class="page-section-item"><div class="icon">H</div><div class="text"><strong>自动回购销毁</strong> — 处理器地址、间隔、花费、触发条件</div></div>
+        </div>
+      </div>
+
+      <div class="page-preview">
+        <div class="page-preview-header" style="padding:0 0 20px;">
+          <h3>Mint 页</h3>
+          <p>面向 Mint 参与用户</p>
+        </div>
+        <div style="padding-top:0;">
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>钱包连接</strong> — 连接 MetaMask，显示地址和链</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>发射状态</strong> — 阶段、价格、单次计数代币、进度条</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>支付代币显示</strong> — 显示接受的股票代币类型和余额</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>个人面板</strong> — 参与次数、支付总额、已记到账</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>立即 Mint</strong> — 股票代币模式先授权再支付，BNB 模式直接支付</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>验证提示</strong> — 未开始/已售罄/限额/网络错误/余额不足</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>操作日志</strong> — 实时显示 Mint 交易状态</div></div>
+        </div>
+      </div>
+
+      <div class="page-preview">
+        <div class="page-preview-header" style="padding:0 0 20px;">
+          <h3>后台 (Admin)</h3>
+          <p>面向部署方和管理员</p>
+        </div>
+        <div style="padding-top:0;">
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>加载合约</strong> — 输入发射台和代币地址</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>当前状态</strong> — 阶段、总募集、Mint 份数、交易状态</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>部署与 Mint</strong> — 创建交易对、初始化代币、开/关 Mint、锁定统计</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>发币与流动性</strong> — 批量发币、注入库存、补加流动性、提取多余募集</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>交易与运行时</strong> — 设置交易时间、同步状态、税白名单、池子燃烧、迁移</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>回购处理器</strong> — 识别处理器、提取处理器代币</div></div>
+          <div class="page-section-item"><div class="icon">●</div><div class="text"><strong>救援提取</strong> — 提取合约代币/BNB（主合约+处理器）</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:48px;">
+      <h3 style="font-size:20px; margin-bottom:20px;">部署页预览说明</h3>
+      <div class="spec-wrap">
+        <table class="spec-table">
+          <thead><tr><th>预览项</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>预计总募集</td><td>满额时的总募资额（股票代币数量）</td></tr>
+            <tr><td>用户单次到账</td><td>每次 Mint 用户获得的代币数量</td></tr>
+            <tr><td>流动性资金分配</td><td>每次 Mint 进池的募集资金</td></tr>
+            <tr><td>流动性代币</td><td>进池代币数量（剩余部分自动进池）</td></tr>
+            <tr><td>预留代币</td><td>库存剩余，可用于后续补充</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p><a href="index.html">← 返回首页</a> · StockMint 股票Mint发射台 · 页面结构</p>
+  </div>
+</footer>
+
+<script>
+const tickerStocks = [
+  { sym: "SPCX", price: "5783.43", change: "+0.84%", up: true },
+  { sym: "QQQB", price: "20456.78", change: "+1.25%", up: true },
+  { sym: "DIAB", price: "42154.67", change: "+0.57%", up: true },
+  { sym: "AAPL", price: "229.87", change: "+1.23%", up: true },
+  { sym: "NVDA", price: "138.67", change: "+4.56%", up: true },
+  { sym: "TSLA", price: "356.78", change: "-2.34%", up: false },
+  { sym: "MSFT", price: "423.45", change: "+0.89%", up: true },
+  { sym: "GOOGL", price: "178.34", change: "+1.56%", up: true },
+  { sym: "AMZN", price: "186.45", change: "+2.34%", up: true },
+  { sym: "META", price: "567.89", change: "+3.12%", up: true },
+  { sym: "GLDB", price: "245.67", change: "+2.34%", up: true },
+  { sym: "IBIT", price: "52.34", change: "+3.67%", up: true },
+  { sym: "VIXB", price: "15.43", change: "-3.44%", up: false },
+  { sym: "JPM", price: "234.56", change: "+1.12%", up: true },
+  { sym: "LLY", price: "789.45", change: "+3.45%", up: true },
+  { sym: "AMD", price: "134.56", change: "+3.45%", up: true },
+  { sym: "PLTR", price: "67.89", change: "+5.67%", up: true },
+  { sym: "COIN", price: "289.45", change: "+4.56%", up: true },
+];
+function renderTicker() {
+  const track = document.getElementById("tickerTrack");
+  const items = [...tickerStocks, ...tickerStocks].map(s => {
+    const cls = s.up ? "up" : "down";
+    const arrow = s.up ? "\u25B2" : "\u25BC";
+    return `<div class="ticker-item"><span class="ts">${s.sym}</span><span class="tp">$${s.price}</span><span class="tc ${cls}">${arrow} ${s.change}</span></div>`;
+  }).join("");
+  track.innerHTML = items;
+}
+renderTicker();
+</script>
+
+</body>
+</html>

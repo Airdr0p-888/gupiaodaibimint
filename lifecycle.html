@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>发射流程 · StockMint</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Stock Ticker Tape -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="nav-mark">S</div>
+    <div><div class="nav-title"><span class="gold">Stock</span>Mint</div><div class="nav-sub">股票 Mint 发射台</div></div>
+  </div>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+  <div class="nav-links">
+    <a href="index.html">首页</a>
+    <a href="features.html">功能展示</a>
+    <a href="lifecycle.html" class="active">发射流程</a>
+    <a href="pages.html">页面结构</a>
+    <a href="stocks.html">可用股票</a>
+  </div>
+</nav>
+
+<section class="section page-wrap">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Launch Lifecycle</div>
+      <h2 class="section-title">七阶段发射流程</h2>
+      <p class="section-desc">从部署到交易开放，完整覆盖发射台全生命周期。每个阶段按钮按状态自动启用/禁用，确保操作顺序正确。</p>
+    </div>
+
+    <div class="lifecycle">
+      <div class="phase">
+        <div class="phase-circle">0</div>
+        <div class="phase-label">UNINITIALIZED<br/><span style="color:var(--muted);font-size:10px">未初始化</span></div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase">
+        <div class="phase-circle active">1</div>
+        <div class="phase-label">PREPARED<br/><span style="color:var(--muted);font-size:10px">已准备</span></div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase">
+        <div class="phase-circle active">2</div>
+        <div class="phase-label">MINT_LIVE<br/><span style="color:var(--muted);font-size:10px">Mint 进行中</span></div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase">
+        <div class="phase-circle">3</div>
+        <div class="phase-label">MINT_CLOSED<br/><span style="color:var(--muted);font-size:10px">Mint 已关闭</span></div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase">
+        <div class="phase-circle">4</div>
+        <div class="phase-label">FINALIZED<br/><span style="color:var(--muted);font-size:10px">已结算</span></div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase">
+        <div class="phase-circle">5</div>
+        <div class="phase-label">LIQUIDITY_ADDED<br/><span style="color:var(--muted);font-size:10px">流动性已注入</span></div>
+      </div>
+      <div class="phase-arrow">→</div>
+      <div class="phase">
+        <div class="phase-circle done">6</div>
+        <div class="phase-label">TRADING_OPENED<br/><span style="color:var(--muted);font-size:10px">交易已开放</span></div>
+      </div>
+    </div>
+
+    <div style="margin-top:48px; display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+      <div style="padding:24px; border-radius:14px; background:linear-gradient(135deg,rgba(14,21,37,0.95),rgba(18,26,46,0.9)); border:1px solid var(--border);">
+        <h4 style="font-size:15px; color:var(--accent); margin-bottom:12px;">阶段 1-2: Mint 期</h4>
+        <p style="color:var(--muted); font-size:13px;">用户可用指定股票代币参与 Mint，结算和加池被禁用。Mint 满额自动结束或手动关闭。</p>
+        <ul class="arch-features" style="margin-top:12px;">
+          <li>用户 Mint 启用（股票代币支付）</li>
+          <li>结算禁用</li>
+          <li>加池禁用</li>
+          <li>满额自动关闭</li>
+        </ul>
+      </div>
+      <div style="padding:24px; border-radius:14px; background:linear-gradient(135deg,rgba(14,21,37,0.95),rgba(18,26,46,0.9)); border:1px solid var(--border);">
+        <h4 style="font-size:15px; color:var(--warning); margin-bottom:12px;">阶段 3-5: 结算期</h4>
+        <p style="color:var(--muted); font-size:13px;">Mint 关闭后，管理员依次执行结算、批量发币、注入库存、添加流动性。用户 Mint 被永久禁用。</p>
+        <ul class="arch-features" style="margin-top:12px;">
+          <li>用户 Mint 禁用</li>
+          <li>结算启用</li>
+          <li>批量发币</li>
+          <li>注入库存</li>
+          <li>加池启用</li>
+        </ul>
+      </div>
+      <div style="padding:24px; border-radius:14px; background:linear-gradient(135deg,rgba(14,21,37,0.95),rgba(18,26,46,0.9)); border:1px solid var(--border);">
+        <h4 style="font-size:15px; color:var(--success); margin-bottom:12px;">阶段 6: 运行期</h4>
+        <p style="color:var(--muted); font-size:13px;">到达开盘时间后同步交易状态。运行时机制全面接管：阶梯税、池子燃烧、回购销毁。</p>
+        <ul class="arch-features" style="margin-top:12px;">
+          <li>交易状态同步启用</li>
+          <li>阶梯税自动切换</li>
+          <li>池子燃烧可用</li>
+          <li>税白名单可用</li>
+          <li>迁移标记可用</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:48px;">
+      <h3 style="font-size:20px; margin-bottom:20px;">阶段操作规则</h3>
+      <div class="spec-wrap">
+        <table class="spec-table">
+          <thead><tr><th>阶段</th><th>用户操作</th><th>管理员操作</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>未初始化</td><td>—</td><td>查看设置</td><td>合约刚部署，未写入配置</td></tr>
+            <tr><td>已准备</td><td>—</td><td>开 Mint / 创建交易对 / 初始化代币</td><td>配置已写入，等待 Mint 开启</td></tr>
+            <tr><td>Mint 进行中</td><td>用股票代币 Mint ✓</td><td>关 Mint / 查看进度</td><td>用户可用指定股票代币参与</td></tr>
+            <tr><td>Mint 已关闭</td><td>Mint 禁用</td><td>结算 / 注入库存 / 批量发币</td><td>Mint 结束，进入结算</td></tr>
+            <tr><td>已结算</td><td>—</td><td>加流动性 / 提取多余募集</td><td>代币已分发，等待加池</td></tr>
+            <tr><td>流动性已注入</td><td>—</td><td>同步交易状态</td><td>流动性已注入，等待开盘时间</td></tr>
+            <tr><td>交易已开放</td><td>—</td><td>运行时操作</td><td>池子燃烧 / 税白名单 / 回购销毁 / 迁移</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p><a href="index.html">← 返回首页</a> · StockMint 股票Mint发射台 · 发射流程</p>
+  </div>
+</footer>
+
+<script>
+const tickerStocks = [
+  { sym: "SPCX", price: "5783.43", change: "+0.84%", up: true },
+  { sym: "QQQB", price: "20456.78", change: "+1.25%", up: true },
+  { sym: "DIAB", price: "42154.67", change: "+0.57%", up: true },
+  { sym: "AAPL", price: "229.87", change: "+1.23%", up: true },
+  { sym: "NVDA", price: "138.67", change: "+4.56%", up: true },
+  { sym: "TSLA", price: "356.78", change: "-2.34%", up: false },
+  { sym: "MSFT", price: "423.45", change: "+0.89%", up: true },
+  { sym: "GOOGL", price: "178.34", change: "+1.56%", up: true },
+  { sym: "AMZN", price: "186.45", change: "+2.34%", up: true },
+  { sym: "META", price: "567.89", change: "+3.12%", up: true },
+  { sym: "GLDB", price: "245.67", change: "+2.34%", up: true },
+  { sym: "IBIT", price: "52.34", change: "+3.67%", up: true },
+  { sym: "VIXB", price: "15.43", change: "-3.44%", up: false },
+  { sym: "JPM", price: "234.56", change: "+1.12%", up: true },
+  { sym: "LLY", price: "789.45", change: "+3.45%", up: true },
+  { sym: "AMD", price: "134.56", change: "+3.45%", up: true },
+  { sym: "PLTR", price: "67.89", change: "+5.67%", up: true },
+  { sym: "COIN", price: "289.45", change: "+4.56%", up: true },
+];
+function renderTicker() {
+  const track = document.getElementById("tickerTrack");
+  const items = [...tickerStocks, ...tickerStocks].map(s => {
+    const cls = s.up ? "up" : "down";
+    const arrow = s.up ? "\u25B2" : "\u25BC";
+    return `<div class="ticker-item"><span class="ts">${s.sym}</span><span class="tp">$${s.price}</span><span class="tc ${cls}">${arrow} ${s.change}</span></div>`;
+  }).join("");
+  track.innerHTML = items;
+}
+renderTicker();
+</script>
+
+</body>
+</html>

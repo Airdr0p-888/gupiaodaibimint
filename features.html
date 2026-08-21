@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>功能展示 · StockMint</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Stock Ticker Tape -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="nav-mark">S</div>
+    <div><div class="nav-title"><span class="gold">Stock</span>Mint</div><div class="nav-sub">股票 Mint 发射台</div></div>
+  </div>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+  <div class="nav-links">
+    <a href="index.html">首页</a>
+    <a href="features.html" class="active">功能展示</a>
+    <a href="lifecycle.html">发射流程</a>
+    <a href="pages.html">页面结构</a>
+    <a href="stocks.html">可用股票</a>
+  </div>
+</nav>
+
+<section class="section page-wrap">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Feature Showcase</div>
+      <h2 class="section-title">完整功能展示</h2>
+      <p class="section-desc">核心亮点：支持任意股票代币作为 Mint 资金。此外涵盖白名单管理、阶梯税、流动性管理、回购销毁等全部功能。</p>
+    </div>
+    <div class="features-grid">
+
+      <!-- Highlight feature -->
+      <div class="feature-card highlight">
+        <div style="flex-shrink:0;">
+          <div class="feature-num">★ 核心亮点</div>
+          <h3>任意股票代币作为 Mint 资金</h3>
+        </div>
+        <div style="flex:1;">
+          <p>部署者可指定任意股票代币作为 Mint 接受的资金货币——SPCX（S&P 500）、QQQB（Nasdaq 100）、AAPL（苹果）、TSLA（特斯拉）等均可。用户用该股票代币支付参与 Mint，突破传统仅限 BNB/USDT 的限制。支持纯股票模式与 BNB/USDT/股票混合模式，灵活适配各种发射策略。</p>
+          <span class="feature-tag">SPCX · QQQB · AAPL · TSLA · 任意股票</span>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-num">02</div>
+        <h3>白名单 Mint</h3>
+        <p>可开启 Mint 白名单模式，仅白名单地址可参与。支持单地址更新和批量白名单操作，灵活控制参与资格。</p>
+        <span class="feature-tag">单地址 + 批量管理</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">03</div>
+        <h3>边 Mint 边加池</h3>
+        <p>每次 Mint 成功后立即给用户发币，并按配置同步加一笔流动性。无需等待 Mint 结束再统一加池，实现即时流动性。</p>
+        <span class="feature-tag">实时 LP 注入</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">04</div>
+        <h3>阶梯税阶段</h3>
+        <p>最多 3 档阶梯税，每档独立配置结束秒数、买税和卖税。开盘早期高税防砸盘，随时间递减至常规税率。</p>
+        <span class="feature-tag">最多 3 档税率</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">05</div>
+        <h3>池子定期燃烧</h3>
+        <p>配置每小时池子燃烧比例和最小池子代币阈值。管理员可手动执行池子燃烧，持续从流动性池中移除代币。</p>
+        <span class="feature-tag">按时比例移除</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">06</div>
+        <h3>自动回购销毁</h3>
+        <p>外置处理器在用户交易时顺带触发：税代币换为指定货币 → 定时回购本币 → 直接打入黑洞。Gas 由触发用户支付。</p>
+        <span class="feature-tag">外置自动处理器</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">07</div>
+        <h3>税白名单</h3>
+        <p>对特定地址加入税白名单，免除买卖税。适用于做市商、合作伙伴、团队钱包等需要免税操作的地址。</p>
+        <span class="feature-tag">地址级免税</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">08</div>
+        <h3>批量发币</h3>
+        <p>Mint 结束后，管理员可批量向参与用户地址发放代币。支持多地址批量操作，也可选择注入库存补充发射台代币。</p>
+        <span class="feature-tag">多地址批量发放</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">09</div>
+        <h3>LP 接收路由</h3>
+        <p>LP 代币可路由至部署钱包、管理员钱包或自定义钱包。灵活适配不同运营场景，LP 去向始终透明可见。</p>
+        <span class="feature-tag">3 种接收方式</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">10</div>
+        <h3>交易状态同步</h3>
+        <p>基于交易开放时间锁开盘，不是手动开关式。到达开放时间后由管理员同步交易状态，后续运行时机制全面接管。</p>
+        <span class="feature-tag">基于时间锁</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">11</div>
+        <h3>救援提取</h3>
+        <p>部署者可通过救援机制提取合约中误入的代币和原生币。支持主合约、回购处理器分别提取，数量填 0 表示提取全部。</p>
+        <span class="feature-tag">代币 + 原生币</span>
+      </div>
+      <div class="feature-card">
+        <div class="feature-num">12</div>
+        <h3>浏览器内编译部署</h3>
+        <p>前端集成 solc 编译器，支持在浏览器内直接编译 Solidity 合约并部署到 BSC 主网/测试网。无需 Remix 或 Hardhat，一键部署全套发射栈。</p>
+        <span class="feature-tag">一键部署</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p><a href="index.html">← 返回首页</a> · StockMint 股票Mint发射台 · 功能展示</p>
+  </div>
+</footer>
+
+<script>
+const tickerStocks = [
+  { sym: "SPCX", price: "5783.43", change: "+0.84%", up: true },
+  { sym: "QQQB", price: "20456.78", change: "+1.25%", up: true },
+  { sym: "DIAB", price: "42154.67", change: "+0.57%", up: true },
+  { sym: "AAPL", price: "229.87", change: "+1.23%", up: true },
+  { sym: "NVDA", price: "138.67", change: "+4.56%", up: true },
+  { sym: "TSLA", price: "356.78", change: "-2.34%", up: false },
+  { sym: "MSFT", price: "423.45", change: "+0.89%", up: true },
+  { sym: "GOOGL", price: "178.34", change: "+1.56%", up: true },
+  { sym: "AMZN", price: "186.45", change: "+2.34%", up: true },
+  { sym: "META", price: "567.89", change: "+3.12%", up: true },
+  { sym: "GLDB", price: "245.67", change: "+2.34%", up: true },
+  { sym: "IBIT", price: "52.34", change: "+3.67%", up: true },
+  { sym: "VIXB", price: "15.43", change: "-3.44%", up: false },
+  { sym: "JPM", price: "234.56", change: "+1.12%", up: true },
+  { sym: "LLY", price: "789.45", change: "+3.45%", up: true },
+  { sym: "AMD", price: "134.56", change: "+3.45%", up: true },
+  { sym: "PLTR", price: "67.89", change: "+5.67%", up: true },
+  { sym: "COIN", price: "289.45", change: "+4.56%", up: true },
+];
+function renderTicker() {
+  const track = document.getElementById("tickerTrack");
+  const items = [...tickerStocks, ...tickerStocks].map(s => {
+    const cls = s.up ? "up" : "down";
+    const arrow = s.up ? "\u25B2" : "\u25BC";
+    return `<div class="ticker-item"><span class="ts">${s.sym}</span><span class="tp">$${s.price}</span><span class="tc ${cls}">${arrow} ${s.change}</span></div>`;
+  }).join("");
+  track.innerHTML = items;
+}
+renderTicker();
+</script>
+
+</body>
+</html>
