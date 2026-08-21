@@ -1,6 +1,7 @@
 /**
- * StockMint Mint Module — extracted & adapted from GDp版本 mint.js
- * Provides: wallet connect, contract loader, mint, claim dividends, log
+ * StockMint Mint Module — auto-load edition
+ * 页面打开时自动读取合约公开信息（无需钱包 / 只读 RPC），
+ * 已授权钱包静默自动连接后升级为完整个人数据。
  * Uses ethers v6 from CDN (ES module)
  */
 import { ethers } from "https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.min.js";
@@ -41,17 +42,22 @@ const ERC20_ABI = [
 
 const NETWORKS = {
   56: { name: "BNB Smart Chain", native: "BNB" },
-  97: { name: "BNB Smart Chain Testnet", native: "tBNB" }
+  97: { name: "BSC Testnet", native: "tBNB" }
+};
+const RPC_URLS = {
+  56: "https://bsc-dataseed.binance.org",
+  97: "https://data-seed-prebsc-1-s1.binance.org:8545"
 };
 
-// 默认合约地址：页面打开时预填，无 URL/localStorage 地址时使用
+// 默认合约地址：页面打开时预填并自动读取
 const DEFAULT_CONTRACT = "0x0d9cded5067456d84909f89ab1ea755b1bad8888";
 
 const state = {
-  provider: null,
+  provider: null,     // 当前 provider（只读 RPC 或钱包）
   signer: null,
   account: null,
   contract: null,
+  readOnly: true,     // 未连接钱包 = 只读模式
   tokenDecimals: 18,
   rewardDecimals: 18,
   rewardSymbol: "BNB",
@@ -69,12 +75,40 @@ const $ = (id) => document.getElementById(id);
 const short = (addr) => (addr ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : "-");
 const isAddress = (addr) => ethers.isAddress(String(addr || "").trim());
 
-function log(message) {
+/* ---------- 图标（Feather 风格） ---------- */
+const ICONS = {
+  tag: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.83z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+  gift: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>',
+  bell: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>',
+  wallet: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>',
+  ticket: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><line x1="13" y1="5" x2="13" y2="7"/><line x1="13" y1="11" x2="13" y2="13"/><line x1="13" y1="17" x2="13" y2="19"/></svg>',
+  diamond: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f0b90b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>',
+  droplet: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>',
+  bank: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="22" x2="21" y2="22"/><path d="M12 2 2 7h20L12 2z"/><path d="M4 11v7"/><path d="M10 11v7"/><path d="M16 11v7"/><path d="M22 11v7"/></svg>',
+  chart: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>',
+  zap: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  copy: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  refresh: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+};
+
+// 代币 Logo 颜色池（按 symbol 哈希取色）
+const LOGO_COLORS = [
+  ["#f0b90b", "#ff8c00"], ["#00d4ff", "#4d8aff"], ["#a855f7", "#ec4899"],
+  ["#3dd598", "#00b894"], ["#ff6b81", "#ff4757"], ["#ffcc66", "#ff9f43"]
+];
+function logoColor(symbol) {
+  let h = 0;
+  for (const ch of String(symbol || "T")) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return LOGO_COLORS[h % LOGO_COLORS.length];
+}
+
+/* ---------- 日志 ---------- */
+function log(message, type = "info") {
   const el = $("smLog");
   if (!el) return;
   const time = new Date().toLocaleTimeString();
   const line = document.createElement("div");
-  line.className = "sm-log-line";
+  line.className = `sm-log-line ${type === "error" ? "err" : type === "ok" ? "ok" : ""}`;
   line.innerHTML = `<span class="sm-log-time">${time}</span><span class="sm-log-msg">${message}</span>`;
   el.prepend(line);
   while (el.children.length > 30) el.removeChild(el.lastChild);
@@ -96,6 +130,7 @@ function providerFromWallet() {
   return eth;
 }
 
+/* ---------- 钱包 ---------- */
 async function connectWallet() {
   const injected = providerFromWallet();
   state.provider = new ethers.BrowserProvider(injected);
@@ -105,19 +140,24 @@ async function connectWallet() {
   const network = await state.provider.getNetwork();
   const chainId = Number(network.chainId);
   state.nativeSymbol = NETWORKS[chainId]?.native || network.name || "BNB";
+  state.readOnly = false;
+
   $("smWalletAddress").textContent = short(state.account);
-  $("smNetworkName").textContent = NETWORKS[chainId]?.name || `Chain ${chainId}`;
-  $("smConnectWallet").textContent = "已连接";
+  $("smWalletAddress").title = state.account;
+  setBadge("smNetworkBadge", NETWORKS[chainId]?.name || `Chain ${chainId}`, chainId === 56 || chainId === 97);
+  $("smConnectWallet").innerHTML = `<span class="sm-wallet-icon"></span>${short(state.account)}`;
   $("smConnectWallet").classList.add("connected");
   $("smWalletDot").classList.add("on");
-  log(`钱包已连接：${short(state.account)}`);
+  log(`钱包已连接：${short(state.account)}`, "ok");
 }
 
 async function ensureWallet() {
   if (!state.signer) await connectWallet();
 }
 
+/* ---------- 格式化 ---------- */
 function formatAmount(value, decimals = 18, max = 6) {
+  if (value === null || value === undefined) return "-";
   const text = ethers.formatUnits(value, decimals);
   if (!text.includes(".")) return text;
   const [whole, frac] = text.split(".");
@@ -125,21 +165,34 @@ function formatAmount(value, decimals = 18, max = 6) {
   return trimmed ? `${whole}.${trimmed}` : whole;
 }
 
-function renderStats(id, items) {
+/* ---------- 环形进度 ---------- */
+const RING_CIRCUMFERENCE = 2 * Math.PI * 52; // r = 52
+function updateRing(pct) {
+  const ring = document.querySelector(".sm-ring-fill");
+  const pctEl = $("smProgressPct");
+  const textEl = $("smProgressText");
+  if (ring) ring.style.strokeDashoffset = RING_CIRCUMFERENCE * (1 - Math.min(100, Math.max(0, pct)) / 100);
+  if (pctEl) pctEl.textContent = `${pct.toFixed(1)}%`;
+  if (textEl) textEl.textContent = `${state.mintedCount} / ${state.maxMintCount}`;
+}
+
+/* ---------- 数据卡片 ---------- */
+function renderCards(id, items) {
   const el = $(id);
   if (!el) return;
   el.innerHTML = items
     .map(
-      ([label, value]) =>
-        `<div class="sm-stat"><span>${label}</span><strong>${value}</strong></div>`
+      ([icon, label, value, cls]) =>
+        `<div class="sm-card ${cls || ""}"><div class="sm-card-icon">${icon || ""}</div><div class="sm-card-body"><span>${label}</span><strong>${value}</strong></div></div>`
     )
     .join("");
 }
 
+/* ---------- 合约 ---------- */
 async function txDone(tx, label) {
   log(`${label} 已提交：${short(tx.hash)}`);
   await tx.wait();
-  log(`${label} 已确认 ✓`);
+  log(`${label} 已确认 ✓`, "ok");
 }
 
 async function approveIfNeeded(tokenAddress, spender, amount, label) {
@@ -149,36 +202,146 @@ async function approveIfNeeded(tokenAddress, spender, amount, label) {
   await txDone(await token.approve(spender, amount), `${label} 授权`);
 }
 
+/** 手动读取合约（带钱包） */
 async function loadContract() {
   await ensureWallet();
   const address = $("smContractAddress").value.trim();
   if (!isAddress(address)) throw new Error("请填写正确的合约地址。");
   localStorage.setItem("stockMintContract", address);
-  state.contract = new ethers.Contract(address, TOKEN_ABI, state.signer);
-  $("smLoadContract").textContent = "读取中...";
-  await refreshContract();
-  $("smLoadContract").textContent = "已读取";
-  log(`合约已读取：${address}`);
+  const btn = $("smLoadContract");
+  btn.disabled = true;
+  btn.innerHTML = `${ICONS.refresh}<span>读取中...</span>`;
+  try {
+    state.contract = new ethers.Contract(address, TOKEN_ABI, state.signer);
+    state.readOnly = false;
+    await refreshContract();
+    $("smTokenAddr").textContent = short(address);
+    $("smTokenAddr").title = address;
+    log(`合约已读取：${address}`, "ok");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `${ICONS.refresh}<span>读取合约</span>`;
+  }
 }
 
+/** 确保合约已绑定签名者（从只读模式升级到可交易模式） */
+async function ensureContractWithSigner() {
+  await ensureWallet();
+  const address = $("smContractAddress").value.trim();
+  if (!state.contract || state.readOnly || !state.signer) {
+    if (!isAddress(address)) throw new Error("请填写正确的合约地址。");
+    state.contract = new ethers.Contract(address, TOKEN_ABI, state.signer);
+    state.readOnly = false;
+    await refreshContract();
+  }
+}
+
+/** 页面打开时自动读取（只读 RPC，无需钱包） */
+async function autoLoad() {
+  const address = $("smContractAddress").value.trim();
+  if (!isAddress(address)) return;
+
+  // 优先使用钱包 provider 探测网络（不请求授权，不弹窗）
+  let provider = null;
+  const eth = window.ethereum;
+  if (eth) {
+    try {
+      const bp = new ethers.BrowserProvider(eth);
+      const net = await bp.getNetwork();
+      const chainId = Number(net.chainId);
+      if (chainId === 56 || chainId === 97) {
+        provider = bp;
+        state.provider = bp;
+        state.nativeSymbol = NETWORKS[chainId].native;
+        setBadge("smNetworkBadge", NETWORKS[chainId].name, true);
+      } else {
+        setBadge("smNetworkBadge", `Chain ${chainId}`, false);
+      }
+    } catch { /* 忽略，走公共 RPC */ }
+  }
+  if (!provider) {
+    state.provider = new ethers.JsonRpcProvider(RPC_URLS[56]);
+    setBadge("smNetworkBadge", "BSC 主网 · 只读", true);
+    $("smNetworkName").textContent = "BSC 主网 · 只读";
+  } else {
+    $("smNetworkName").textContent = state.nativeSymbol === "tBNB" ? "BSC 测试网" : "BNB Smart Chain";
+  }
+
+  try {
+    // 若钱包已静默连接成功（signer 版合约已就绪），不覆盖
+    if (!state.signer) {
+      state.contract = new ethers.Contract(address, TOKEN_ABI, state.provider);
+      await refreshContract();
+    }
+    $("smTokenAddr").textContent = short(address);
+    $("smTokenAddr").title = address;
+    $("smAutoBadge").classList.add("done");
+    $("smAutoBadge").textContent = "已自动读取";
+    log("已自动读取合约公开信息（连接钱包后可查看个人数据）", "ok");
+  } catch (err) {
+    const msg = err.reason || err.shortMessage || err.message || String(err);
+    $("smTokenTitle").textContent = "合约读取失败";
+    $("smAutoBadge").classList.add("fail");
+    $("smAutoBadge").textContent = "读取失败";
+    const mn = $("smMintNow");
+    if (mn) { mn.disabled = true; mn.innerHTML = `${ICONS.bell}<span>合约读取失败</span>`; }
+    log(`自动读取失败：${msg}`, "error");
+  }
+}
+
+/** 已授权钱包静默自动连接（不弹窗） */
+async function silentConnect() {
+  const eth = window.ethereum;
+  if (!eth) return;
+  try {
+    const accounts = await eth.request({ method: "eth_accounts" });
+    if (!accounts || accounts.length === 0) return; // 未授权过，不打扰用户
+    await connectWallet(); // 已授权，requestAccounts 不会弹窗
+    const address = $("smContractAddress").value.trim();
+    if (!isAddress(address)) return;
+    if (state.contract) {
+      // 将现有合约绑定到 signer 并刷新个人数据
+      const contractAddress = await state.contract.getAddress();
+      state.contract = new ethers.Contract(contractAddress, TOKEN_ABI, state.signer);
+      state.readOnly = false;
+      await refreshContract();
+      log("钱包已自动连接，个人数据已加载", "ok");
+    } else {
+      await loadContract();
+    }
+  } catch (err) {
+    console.warn("silent connect skipped:", err);
+  }
+}
+
+/** 读取合约数据（兼容只读/签名者两种模式） */
 async function refreshContract() {
   if (!state.contract) return;
+
   const [
-    name, symbol, decimals, balance, mode, mintPrice, tokenPerMint,
-    mintedCount, maxMintCount, mintEnabled, hasMinted, whitelistEnabled,
-    pendingToken, pendingLP, dividendReserve, minTokenDividendBalance
+    name, symbol, decimals, mode, mintPrice, tokenPerMint,
+    mintedCount, maxMintCount, mintEnabled, whitelistEnabled
   ] = await Promise.all([
-    state.contract.name(), state.contract.symbol(), state.contract.decimals(),
-    state.contract.balanceOf(state.account), state.contract.mintMode(),
-    state.contract.mintPrice(), state.contract.tokenPerMint(),
-    state.contract.mintedCount(), state.contract.maxMintCount(),
-    state.contract.mintEnabled(), state.contract.hasMinted(state.account),
-    state.contract.whitelistEnabled(),
-    state.contract.pendingTokenDividend(state.account),
-    state.contract.pendingLPDividend(state.account),
-    state.contract.dividendReserveView().catch(() => state.contract.dividendReserve()),
-    state.contract.minTokenDividendBalanceView().catch(() => state.contract.minTokenDividendBalance())
+    state.contract.name(),
+    state.contract.symbol(),
+    state.contract.decimals(),
+    state.contract.mintMode(),
+    state.contract.mintPrice(),
+    state.contract.tokenPerMint(),
+    state.contract.mintedCount(),
+    state.contract.maxMintCount(),
+    state.contract.mintEnabled(),
+    state.contract.whitelistEnabled()
   ]);
+
+  // 分红储备（公开数据，尽力读取）
+  let dividendReserve = null, minTokenDividendBalance = null;
+  try {
+    dividendReserve = await state.contract.dividendReserveView().catch(() => state.contract.dividendReserve());
+  } catch { /* ignore */ }
+  try {
+    minTokenDividendBalance = await state.contract.minTokenDividendBalanceView().catch(() => state.contract.minTokenDividendBalance());
+  } catch { /* ignore */ }
 
   state.tokenDecimals = Number(decimals);
   state.mode = Number(mode);
@@ -187,20 +350,30 @@ async function refreshContract() {
   state.mintPaySymbol = state.mode === 0 ? state.nativeSymbol : "TOKEN";
   state.mintPayDecimals = 18;
   state.mintEnabled = mintEnabled;
-  state.hasMinted = hasMinted;
   state.mintedCount = Number(mintedCount);
   state.maxMintCount = Number(maxMintCount);
 
-  let whitelistStatus = "未开启";
-  if (whitelistEnabled) {
-    const allowed = await state.contract.whitelist(state.account);
-    whitelistStatus = allowed ? "已在白名单" : "未在白名单";
+  let whitelistStatus = state.readOnly ? "连接钱包后查看" : "未开启";
+  let hasMinted = state.readOnly ? null : false;
+  let balance = null, pendingToken = null, pendingLP = null;
+
+  if (!state.readOnly && state.signer) {
+    try { balance = await state.contract.balanceOf(state.account); } catch { /* ignore */ }
+    try { hasMinted = await state.contract.hasMinted(state.account); } catch { /* ignore */ }
+    try { [pendingToken, pendingLP] = await Promise.all([state.contract.pendingTokenDividend(state.account), state.contract.pendingLPDividend(state.account)]); } catch { /* ignore */ }
+    if (whitelistEnabled) {
+      try {
+        const allowed = await state.contract.whitelist(state.account);
+        whitelistStatus = allowed ? "已在白名单" : "未在白名单";
+      } catch { /* ignore */ }
+    }
   }
 
+  // 支付模式详情（mode=1 时读取支付代币）
   if (state.mode === 1) {
-    const paymentAddress = await state.contract.usdtAddress();
-    const reward = new ethers.Contract(paymentAddress, ERC20_ABI, state.signer);
     try {
+      const paymentAddress = await state.contract.usdtAddress();
+      const reward = new ethers.Contract(paymentAddress, ERC20_ABI, state.provider);
       state.mintPaySymbol = await reward.symbol();
       state.mintPayDecimals = Number(await reward.decimals());
       state.rewardSymbol = state.mintPaySymbol;
@@ -212,52 +385,86 @@ async function refreshContract() {
     }
   }
 
+  /* ---- 头部渲染 ---- */
   $("smTokenTitle").textContent = `${name} (${symbol})`;
-  setBadge("smMintModeBadge", state.mode === 0 ? "BNB 模式" : `${state.mintPaySymbol} 模式`, true);
+  const [c1, c2] = logoColor(symbol);
+  const logo = $("smTokenLogo");
+  if (logo) {
+    logo.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+    logo.textContent = (symbol || "T").slice(0, 2).toUpperCase();
+  }
+  setBadge("smMintModeBadge", state.mode === 0 ? `${state.nativeSymbol} 模式` : `${state.mintPaySymbol} 模式`, true);
   setBadge("smRewardUnitBadge", state.rewardSymbol, true);
 
-  // Progress bar
+  /* ---- 环形进度 ---- */
   const pct = state.maxMintCount > 0 ? Math.min(100, (state.mintedCount / state.maxMintCount) * 100) : 0;
-  const bar = $("smMintProgress");
-  if (bar) {
-    bar.querySelector(".sm-progress-fill").style.width = pct.toFixed(1) + "%";
-    bar.querySelector(".sm-progress-text").textContent = `${state.mintedCount} / ${state.maxMintCount}  (${pct.toFixed(1)}%)`;
-  }
+  updateRing(pct);
 
-  renderStats("smMintStats", [
-    ["Mint 价格", `${formatAmount(mintPrice, state.mintPayDecimals)} ${state.mintPaySymbol}`],
-    ["单次获得", `${formatAmount(tokenPerMint, state.tokenDecimals)} ${symbol}`],
-    ["Mint 状态", mintEnabled ? '<span style="color:#3dd598">开启</span>' : '<span style="color:#ff6b81">关闭</span>'],
-    ["我的余额", `${formatAmount(balance, state.tokenDecimals)} ${symbol}`],
-    ["我的资格", hasMinted ? "已 Mint" : whitelistStatus]
+  /* ---- Mint 统计 ---- */
+  const balanceText = balance === null ? "连接钱包后查看" : `${formatAmount(balance, state.tokenDecimals)} ${symbol}`;
+  const statusText = mintEnabled
+    ? '<span style="color:#3dd598">● 开启中</span>'
+    : '<span style="color:#ff6b81">● 已关闭</span>';
+  const qualifyText = hasMinted === null ? whitelistStatus : (hasMinted ? "已 Mint" : whitelistStatus);
+  renderCards("smMintStats", [
+    [ICONS.tag, "Mint 价格", `${formatAmount(mintPrice, state.mintPayDecimals)} ${state.mintPaySymbol}`],
+    [ICONS.gift, "单次获得", `${formatAmount(tokenPerMint, state.tokenDecimals)} ${symbol}`],
+    [ICONS.bell, "Mint 状态", statusText],
+    [ICONS.wallet, "我的余额", balanceText],
+    [ICONS.ticket, "我的资格", qualifyText],
+    [ICONS.chart, "已 Mint", `${state.mintedCount} / ${state.maxMintCount}`]
   ]);
 
-  renderStats("smRewardStats", [
-    ["持币可领", `${formatAmount(pendingToken, state.rewardDecimals)} ${state.rewardSymbol}`],
-    ["LP 可领", `${formatAmount(pendingLP, state.rewardDecimals)} ${state.rewardSymbol}`],
-    ["分红储备", `${formatAmount(dividendReserve, state.rewardDecimals)} ${state.rewardSymbol}`],
-    ["最低持仓", `${formatAmount(minTokenDividendBalance, state.tokenDecimals)} ${symbol}`]
+  /* ---- 分红统计 ---- */
+  const pendingTokenText = pendingToken === null ? "连接钱包后查看" : `${formatAmount(pendingToken, state.rewardDecimals)} ${state.rewardSymbol}`;
+  const pendingLPText = pendingLP === null ? "连接钱包后查看" : `${formatAmount(pendingLP, state.rewardDecimals)} ${state.rewardSymbol}`;
+  renderCards("smRewardStats", [
+    [ICONS.diamond, "持币可领", pendingTokenText],
+    [ICONS.droplet, "LP 可领", pendingLPText],
+    [ICONS.bank, "分红储备", dividendReserve === null ? "-" : `${formatAmount(dividendReserve, state.rewardDecimals)} ${state.rewardSymbol}`],
+    [ICONS.chart, "最低持仓", minTokenDividendBalance === null ? "-" : `${formatAmount(minTokenDividendBalance, state.tokenDecimals)} ${symbol}`]
   ]);
 
-  // Mint button state
+  /* ---- Mint 按钮状态 ---- */
   const btn = $("smMintNow");
-  if (!mintEnabled || state.hasMinted || state.mintedCount >= state.maxMintCount) {
+  const soldOut = state.maxMintCount > 0 && state.mintedCount >= state.maxMintCount;
+  if (state.readOnly || !state.signer) {
+    btn.disabled = false;
+    btn.innerHTML = `${ICONS.wallet}<span>连接钱包参与 Mint</span>`;
+  } else if (!mintEnabled) {
     btn.disabled = true;
-    if (!mintEnabled) btn.textContent = "Mint 已关闭";
-    else if (state.hasMinted) btn.textContent = "已 Mint 过";
-    else btn.textContent = "Mint 已满";
+    btn.innerHTML = `${ICONS.bell}<span>Mint 已关闭</span>`;
+  } else if (hasMinted) {
+    btn.disabled = true;
+    btn.innerHTML = `${ICONS.ticket}<span>已 Mint 过</span>`;
+  } else if (soldOut) {
+    btn.disabled = true;
+    btn.innerHTML = `${ICONS.chart}<span>Mint 已满</span>`;
   } else {
     btn.disabled = false;
-    btn.textContent = state.mode === 0 ? "BNB Mint" : `${state.mintPaySymbol} Mint`;
+    btn.innerHTML = `${ICONS.zap}<span>${state.mode === 0 ? "BNB Mint" : `${state.mintPaySymbol} Mint`}</span>`;
+  }
+
+  /* ---- 领取按钮 ---- */
+  const claimBtn = $("smClaimDividends");
+  if (state.readOnly || !state.signer) {
+    claimBtn.disabled = false;
+    claimBtn.innerHTML = `${ICONS.wallet}<span>连接钱包查看分红</span>`;
+  } else {
+    claimBtn.disabled = false;
+    claimBtn.innerHTML = `${ICONS.diamond}<span>领取分红</span>`;
   }
 }
 
+/* ---------- 操作 ---------- */
 async function mintNow() {
-  await ensureWallet();
-  if (!state.contract) await loadContract();
+  await ensureContractWithSigner();
   if (!state.mintEnabled) throw new Error("Mint 已关闭，无法继续");
-  if (state.hasMinted) throw new Error("该钱包已经 Mint 过，每个地址限 Mint 一次");
-  if (state.mintedCount >= state.maxMintCount) throw new Error("Mint 已满/售罄");
+  const hasMinted = await state.contract.hasMinted(state.account);
+  if (hasMinted) throw new Error("该钱包已经 Mint 过，每个地址限 Mint 一次");
+  const mintedCount = Number(await state.contract.mintedCount());
+  const maxMintCount = Number(await state.contract.maxMintCount());
+  if (maxMintCount > 0 && mintedCount >= maxMintCount) throw new Error("Mint 已满/售罄");
   const address = await state.contract.getAddress();
   const mode = Number(await state.contract.mintMode());
   const price = await state.contract.mintPrice();
@@ -276,12 +483,12 @@ async function mintNow() {
 }
 
 async function claimDividends() {
-  await ensureWallet();
-  if (!state.contract) await loadContract();
+  await ensureContractWithSigner();
   await txDone(await state.contract.claimDividends(), "领取分红");
   await refreshContract();
 }
 
+/* ---------- 错误翻译 ---------- */
 const ERROR_TRANSLATIONS = [
   [/not\s*bnb\s*mode/i, "当前合约是 USDT 模式，不支持 BNB Mint"],
   [/not\s*usdt\s*mode/i, "当前合约是 BNB 模式，不支持 USDT Mint"],
@@ -311,7 +518,7 @@ const ERROR_TRANSLATIONS = [
   [/no\s*lp\s*supply/i, "无 LP 流动性供应"],
   [/bad\s*BNB/i, "发送的 BNB 金额不正确"],
   [/zero\s*amount/i, "数量不能为 0"],
-  [/unknown\s*custom\s*error/i, "合约执行失败，请确认操作条件是否满足"],
+  [/unknown\s*custom\s*error/i, "合约执行失败，请确认操作条件是否满足"]
 ];
 
 function translateError(message) {
@@ -322,30 +529,33 @@ function translateError(message) {
 }
 
 async function run(button, fn) {
+  const busyHTML = `${ICONS.refresh}<span>处理中...</span>`;
   try {
     button.disabled = true;
-    const original = button.textContent;
-    button.textContent = "处理中...";
+    const original = button.innerHTML;
+    button.innerHTML = busyHTML;
     await fn();
-    button.textContent = original;
+    // 若业务逻辑已修改按钮文案（如连接后显示地址），保留修改；否则恢复原文案
+    if (button.innerHTML === busyHTML) button.innerHTML = original;
   } catch (err) {
     console.error(err);
     const message = err.shortMessage || err.reason || err.message || String(err);
     const translated = translateError(message);
     if (translated) {
-      log(translated);
+      log(translated, "error");
     } else if (message.includes("TRANSFER_FROM_FAILED")) {
-      log("TRANSFER_FROM_FAILED：通常是授权不足、余额不足、USDT/Router/网络不匹配，或池子太浅导致路由失败。");
+      log("TRANSFER_FROM_FAILED：通常是授权不足、余额不足、USDT/Router/网络不匹配，或池子太浅导致路由失败。", "error");
     } else if (message.includes("insufficient funds")) {
-      log("Gas 不足：请确认当前网络的钱包里有足够原生币支付手续费。");
+      log("Gas 不足：请确认当前网络的钱包里有足够原生币支付手续费。", "error");
     } else {
-      log(message);
+      log(message, "error");
     }
   } finally {
     button.disabled = false;
   }
 }
 
+/* ---------- 启动 ---------- */
 function bootAddress() {
   const params = new URLSearchParams(location.search);
   const fromUrl = params.get("contract");
@@ -354,12 +564,12 @@ function bootAddress() {
   if (address && $("smContractAddress")) $("smContractAddress").value = address;
 }
 
-// Bind events (guard against missing elements — mint section may not exist on other pages)
 function initMint() {
   const cw = $("smConnectWallet");
   const lc = $("smLoadContract");
   const mn = $("smMintNow");
   const cd = $("smClaimDividends");
+  const ca = $("smCopyAddr");
   if (!cw) return; // Mint section not on this page
 
   cw.addEventListener("click", (e) =>
@@ -371,20 +581,43 @@ function initMint() {
   lc.addEventListener("click", (e) => run(e.currentTarget, loadContract));
   mn.addEventListener("click", (e) => run(e.currentTarget, mintNow));
   cd.addEventListener("click", (e) => run(e.currentTarget, claimDividends));
+  if (ca) {
+    ca.addEventListener("click", async () => {
+      const addr = $("smContractAddress").value.trim();
+      if (!addr) return;
+      try {
+        await navigator.clipboard.writeText(addr);
+        ca.textContent = "已复制";
+        ca.classList.add("copied");
+        setTimeout(() => { ca.textContent = "复制"; ca.classList.remove("copied"); }, 1500);
+      } catch {
+        log("复制失败，请手动复制", "error");
+      }
+    });
+  }
+  // 输入框回车触发读取
+  $("smContractAddress").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") run(lc, loadContract);
+  });
 
   window.ethereum?.on?.("accountsChanged", () => {
     state.signer = null;
     state.account = null;
+    state.readOnly = true;
     connectWallet()
       .then(async () => {
         if (isAddress($("smContractAddress").value)) await loadContract();
       })
-      .catch((err) => log(err.message || String(err)));
+      .catch((err) => log(err.message || String(err), "error"));
   });
 
   window.ethereum?.on?.("chainChanged", () => location.reload());
 
   bootAddress();
+  // 1) 自动只读读取（无需钱包，无弹窗）
+  autoLoad();
+  // 2) 已授权钱包静默连接（不弹窗，仅当用户以前授权过）
+  setTimeout(silentConnect, 300);
 }
 
 if (document.readyState === "loading") {

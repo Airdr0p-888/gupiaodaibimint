@@ -161,20 +161,42 @@
     <div class="section-head">
       <div class="eyebrow">Live Mint</div>
       <h2 class="section-title">Mint 交互台</h2>
-      <p class="section-desc">连接钱包后，输入代币合约地址即可参与 Mint 或领取分红。支持 BNB 原生支付和 ERC20 股票代币支付两种模式。</p>
+      <p class="section-desc">打开页面即自动读取默认合约（无需钱包）。连接钱包后自动加载个人数据，可参与 Mint 或领取分红。支持 BNB 原生支付和 ERC20 股票代币支付两种模式。</p>
     </div>
 
     <div class="sm-shell">
-      <!-- Top bar: title + connect -->
+      <!-- Top bar: token brand + connect -->
       <div class="sm-topbar">
-        <div class="sm-topbar-left">
-          <div class="eyebrow">StockMint Fair Mint</div>
-          <h3 id="smTokenTitle" class="sm-token-title">输入合约地址开始</h3>
+        <div class="sm-token-brand">
+          <div class="sm-token-logo" id="smTokenLogo">⛓</div>
+          <div class="sm-token-meta">
+            <div class="sm-eyebrow"><span class="sm-pulse-dot"></span> StockMint Fair Mint</div>
+            <h3 id="smTokenTitle" class="sm-token-title">正在自动读取合约...</h3>
+            <div class="sm-token-addr-row">
+              <span class="sm-token-addr" id="smTokenAddr">0x0d9c...8888</span>
+              <button id="smCopyAddr" class="sm-copy-btn" title="复制合约地址">复制</button>
+            </div>
+          </div>
         </div>
-        <button id="smConnectWallet" class="sm-btn sm-btn-primary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-          连接钱包
-        </button>
+        <div class="sm-top-actions">
+          <span id="smNetworkBadge" class="sm-badge">检测网络...</span>
+          <button id="smConnectWallet" class="sm-btn sm-btn-primary">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12V7H5a2 2 0 0 1 0-4h14"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
+            连接钱包
+          </button>
+        </div>
+      </div>
+
+      <!-- Contract loader + auto-read status -->
+      <div class="sm-contract-loader">
+        <label class="sm-contract-field">
+          <span class="sm-input-label">合约地址</span>
+          <input id="smContractAddress" placeholder="0x0d9c...8888（默认），可粘贴其他合约地址" spellcheck="false" />
+        </label>
+        <div class="sm-loader-actions">
+          <span id="smAutoBadge" class="sm-auto-badge">自动读取中...</span>
+          <button id="smLoadContract" class="sm-btn sm-btn-secondary">读取合约</button>
+        </div>
       </div>
 
       <!-- Wallet strip -->
@@ -185,60 +207,70 @@
         </div>
         <div class="sm-ws-item">
           <div class="sm-ws-label">网络</div>
-          <div class="sm-ws-value" id="smNetworkName">未知</div>
+          <div class="sm-ws-value" id="smNetworkName">只读模式 · 无需钱包</div>
         </div>
       </div>
 
-      <!-- Contract loader -->
-      <div class="sm-contract-loader">
-        <label>
-          <span class="sm-input-label">合约地址</span>
-          <input id="smContractAddress" placeholder="0x0d9c...8888（默认），可粘贴其他合约地址" />
-        </label>
-        <button id="smLoadContract" class="sm-btn sm-btn-secondary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-9-9c2.5 0 4.8 1 6.5 2.6"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          读取合约
-        </button>
-      </div>
-
-      <!-- Action grid: Mint + Rewards -->
-      <div class="sm-action-grid">
-        <article class="sm-panel">
+      <!-- Main grid: progress ring + mint action -->
+      <div class="sm-main-grid">
+        <article class="sm-panel sm-panel-ring">
           <div class="sm-panel-head">
             <div>
-              <div class="eyebrow">Mint</div>
-              <h4 class="sm-panel-title">参与 Mint</h4>
+              <div class="sm-eyebrow">Mint Progress</div>
+              <h4 class="sm-panel-title">发射进度</h4>
             </div>
-            <span id="smMintModeBadge" class="sm-badge">未读取</span>
+            <span id="smMintModeBadge" class="sm-badge">读取中...</span>
           </div>
-
-          <!-- Progress bar -->
-          <div class="sm-mint-progress" id="smMintProgress">
-            <div class="sm-progress-track"><div class="sm-progress-fill" style="width:0%"></div></div>
-            <div class="sm-progress-text">-- / --</div>
+          <div class="sm-ring-wrap">
+            <svg class="sm-ring" width="150" height="150" viewBox="0 0 120 120">
+              <defs>
+                <linearGradient id="smRingGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f0b90b"/>
+                  <stop offset="55%" stop-color="#ffb830"/>
+                  <stop offset="100%" stop-color="#ffd633"/>
+                </linearGradient>
+              </defs>
+              <circle class="sm-ring-track" cx="60" cy="60" r="52" fill="none" stroke-width="9"/>
+              <circle class="sm-ring-fill" cx="60" cy="60" r="52" fill="none" stroke-width="9"
+                      stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                      transform="rotate(-90 60 60)"/>
+              <text class="sm-ring-pct" id="smProgressPct" x="60" y="58" text-anchor="middle">--%</text>
+              <text class="sm-ring-sub" id="smProgressText" x="60" y="78" text-anchor="middle">-- / --</text>
+            </svg>
           </div>
-
-          <div id="smMintStats" class="sm-stats"></div>
           <button id="smMintNow" class="sm-btn sm-btn-mint" disabled>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
             立即 Mint
           </button>
         </article>
 
-        <article class="sm-panel">
-          <div class="sm-panel-head">
-            <div>
-              <div class="eyebrow">Rewards</div>
-              <h4 class="sm-panel-title">领取分红</h4>
+        <div class="sm-panel-col">
+          <article class="sm-panel">
+            <div class="sm-panel-head">
+              <div>
+                <div class="sm-eyebrow">Mint</div>
+                <h4 class="sm-panel-title">参与 Mint</h4>
+              </div>
+              <span class="sm-badge">实时数据</span>
             </div>
-            <span id="smRewardUnitBadge" class="sm-badge">-</span>
-          </div>
-          <div id="smRewardStats" class="sm-stats"></div>
-          <button id="smClaimDividends" class="sm-btn sm-btn-claim">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-            领取分红
-          </button>
-        </article>
+            <div id="smMintStats" class="sm-cards"></div>
+          </article>
+
+          <article class="sm-panel">
+            <div class="sm-panel-head">
+              <div>
+                <div class="sm-eyebrow">Rewards</div>
+                <h4 class="sm-panel-title">分红收益</h4>
+              </div>
+              <span id="smRewardUnitBadge" class="sm-badge">-</span>
+            </div>
+            <div id="smRewardStats" class="sm-cards"></div>
+            <button id="smClaimDividends" class="sm-btn sm-btn-claim">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              领取分红
+            </button>
+          </article>
+        </div>
       </div>
 
       <!-- Log -->
@@ -246,7 +278,9 @@
         <div class="sm-log-head">
           <span class="sm-log-dot"></span> 交易日志
         </div>
-        <div id="smLog" class="sm-log"></div>
+        <div id="smLog" class="sm-log">
+          <div class="sm-log-line"><span class="sm-log-time">-</span><span class="sm-log-msg">正在自动读取合约公开信息...</span></div>
+        </div>
       </div>
     </div>
   </div>
