@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>部署指南 · StockMint</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<!-- Stock Ticker Tape -->
+<div class="ticker-wrap">
+  <div class="ticker-label">LIVE</div>
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<nav class="topnav">
+  <div class="nav-brand">
+    <div class="nav-mark">S</div>
+    <div><div class="nav-title"><span class="gold">Stock</span>Mint</div><div class="nav-sub">股票 Mint 发射台</div></div>
+  </div>
+  <button class="nav-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')">☰</button>
+  <div class="nav-links">
+    <a href="index.html">首页</a>
+    <a href="features.html">功能展示</a>
+    <a href="lifecycle.html">发射流程</a>
+    <a href="deploy.html" class="active">部署指南</a>
+    <a href="stocks.html">可用股票</a>
+  </div>
+</nav>
+
+<section class="section page-wrap">
+  <div class="container">
+    <div class="section-head">
+      <div class="eyebrow">Deploy Guide</div>
+      <h2 class="section-title">一键部署指南</h2>
+      <p class="section-desc">浏览器内编译 + 部署，无需本地环境。连接钱包后即可完成「发射台 → 主代币 → 交易对 → 开启 Mint」全流程，全程链上确认。</p>
+    </div>
+
+    <!-- Deploy steps timeline -->
+    <div class="deploy-steps">
+      <div class="deploy-step">
+        <div class="deploy-step-num">1</div>
+        <div class="deploy-step-body">
+          <h3>连接钱包</h3>
+          <p>连接 MetaMask / TokenPocket，自动检测 BSC 主网；页面会自动填入 Pancake V2 Router、WBNB / USDT 等默认地址。</p>
+        </div>
+      </div>
+      <div class="deploy-step">
+        <div class="deploy-step-num">2</div>
+        <div class="deploy-step-body">
+          <h3>浏览器内编译</h3>
+          <p>solc 0.8.26 在浏览器内直接编译 <code>DBurnMintLaunchpad.sol</code> + <code>BurnToken.sol</code>，编译完成后输出 ABI（Launchpad 87 项 / BurnToken 69 项）。</p>
+        </div>
+      </div>
+      <div class="deploy-step">
+        <div class="deploy-step-num">3</div>
+        <div class="deploy-step-body">
+          <h3>部署 Launchpad 发射台</h3>
+          <p>钱包确认部署发射台合约，得到 Launchpad 地址。当前连接钱包自动作为 launchOperator / taxProcessor / stairTaxReceiver 默认值。</p>
+        </div>
+      </div>
+      <div class="deploy-step">
+        <div class="deploy-step-num">4</div>
+        <div class="deploy-step-body">
+          <h3>写入 Launch 配置</h3>
+          <p>写入代币名称、符号、总供应量、Mint 价格与份数、白名单、税率、流动性分配、交易开放时间等全部启动参数。</p>
+        </div>
+      </div>
+      <div class="deploy-step">
+        <div class="deploy-step-num">5</div>
+        <div class="deploy-step-body">
+          <h3>部署 BurnToken 主代币</h3>
+          <p>Clone 部署主代币合约，按 <code>tradingOpenTime</code> 时间自动开盘（非手动 <code>openTrading()</code>）。</p>
+        </div>
+      </div>
+      <div class="deploy-step">
+        <div class="deploy-step-num">6</div>
+        <div class="deploy-step-body">
+          <h3>创建 / 读取 Pair</h3>
+          <p>Pair 地址可留空，部署后自动创建 Pancake V2 交易对，或读取已存在的 Pair 地址。</p>
+        </div>
+      </div>
+      <div class="deploy-step">
+        <div class="deploy-step-num">7</div>
+        <div class="deploy-step-body">
+          <h3>初始化 Token</h3>
+          <p>初始化主代币合约，绑定发射台与交易对，完成代币启动前的最后配置。</p>
+        </div>
+      </div>
+      <div class="deploy-step">
+        <div class="deploy-step-num">8</div>
+        <div class="deploy-step-body">
+          <h3>开启 Mint</h3>
+          <p>开启 Mint 通道，用户即可用 BNB 或指定股票代币参与 Mint。满额自动结束，或后台手动关闭。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Connected features -->
+    <div class="deploy-block">
+      <div class="deploy-block-head">
+        <div class="eyebrow">Ready Features</div>
+        <h3>已接好的功能</h3>
+        <p>从部署到后台管理，全生命周期功能均已接通。</p>
+      </div>
+      <div class="deploy-tags">
+        <span class="deploy-tag">连接钱包</span>
+        <span class="deploy-tag">浏览器内编译</span>
+        <span class="deploy-tag">部署 Launchpad</span>
+        <span class="deploy-tag">写入 Launch 配置</span>
+        <span class="deploy-tag">部署 BurnToken Clone</span>
+        <span class="deploy-tag">自动创建或读取 Pair</span>
+        <span class="deploy-tag">初始化 Token</span>
+        <span class="deploy-tag">读取 Mint 状态</span>
+        <span class="deploy-tag">BNB Mint</span>
+        <span class="deploy-tag">股票代币 Mint</span>
+        <span class="deploy-tag">后台加载合约</span>
+        <span class="deploy-tag">开启 Mint</span>
+        <span class="deploy-tag">关闭 Mint</span>
+        <span class="deploy-tag">结算 Mint</span>
+        <span class="deploy-tag">批量发币</span>
+        <span class="deploy-tag">注入库存</span>
+        <span class="deploy-tag">添加流动性</span>
+        <span class="deploy-tag">查看 LP 去向</span>
+        <span class="deploy-tag">提取多余募集</span>
+        <span class="deploy-tag">同步交易状态</span>
+        <span class="deploy-tag">更新税白名单</span>
+        <span class="deploy-tag">执行池子燃烧</span>
+        <span class="deploy-tag">标记迁移</span>
+      </div>
+    </div>
+
+    <!-- Params + verify -->
+    <div class="deploy-grid">
+      <div class="deploy-panel">
+        <div class="deploy-block-head">
+          <div class="eyebrow">Launch Params</div>
+          <h3>部署参数（BSC 主网自动填入）</h3>
+        </div>
+        <div class="spec-wrap">
+          <table class="spec-table">
+            <thead><tr><th>参数</th><th>默认行为</th></tr></thead>
+            <tbody>
+              <tr><td>Pancake V2 Router</td><td>连接钱包后自动填入</td></tr>
+              <tr><td>WBNB（BNB 模式）</td><td>连接钱包后自动填入</td></tr>
+              <tr><td>USDT（USDT 模式）</td><td>连接钱包后自动填入</td></tr>
+              <tr><td>launchOperator</td><td>默认为当前连接钱包</td></tr>
+              <tr><td>taxProcessor</td><td>默认为当前连接钱包</td></tr>
+              <tr><td>stairTaxReceiver</td><td>默认为当前连接钱包</td></tr>
+              <tr><td>Pair 地址</td><td>可留空，部署后自动创建或读取</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="deploy-panel">
+        <div class="deploy-block-head">
+          <div class="eyebrow">Source Verify</div>
+          <h3>开源验证配置</h3>
+        </div>
+        <div class="spec-wrap">
+          <table class="spec-table">
+            <thead><tr><th>配置项</th><th>值</th></tr></thead>
+            <tbody>
+              <tr><td>Solidity</td><td>0.8.26</td></tr>
+              <tr><td>optimizer</td><td>enabled</td></tr>
+              <tr><td>runs</td><td>200</td></tr>
+              <tr><td>viaIR</td><td>true</td></tr>
+              <tr><td>evmVersion</td><td>cancun</td></tr>
+              <tr><td>Launchpad 验证文件</td><td><code>launchpad-standard-input.json</code></td></tr>
+              <tr><td>BurnToken 验证文件</td><td><code>burntoken-standard-input.json</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Prerequisites -->
+    <div class="deploy-block" style="margin-top: 34px;">
+      <div class="deploy-block-head">
+        <div class="eyebrow">Version Notes</div>
+        <h3>当前版本重要前提</h3>
+      </div>
+      <div class="deploy-notes">
+        <div class="deploy-note"><b>1</b><span>BurnToken 按 <code>tradingOpenTime</code> 时间自动开盘，不是 <code>openTrading()</code> 式手动开盘。</span></div>
+        <div class="deploy-note"><b>2</b><span>后台页的「开启交易」逻辑，在本版本体现为「同步交易状态」。</span></div>
+        <div class="deploy-note"><b>3</b><span>Pair 地址可以留空，部署后会自动尝试创建或读取。</span></div>
+        <div class="deploy-note"><b>4</b><span>LP 分红不在这个版本里。</span></div>
+        <div class="deploy-note"><b>5</b><span>Mint 没有结束时间，满额自动结束，或者后台手动关闭。</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p><a href="index.html">← 返回首页</a> · StockMint 股票Mint发射台 · 部署指南</p>
+  </div>
+</footer>
+
+<script>
+const tickerStocks = [
+  { sym: "SPCX", price: "5783.43", change: "+0.84%", up: true },
+  { sym: "QQQB", price: "20456.78", change: "+1.25%", up: true },
+  { sym: "DIAB", price: "42154.67", change: "+0.57%", up: true },
+  { sym: "AAPL", price: "229.87", change: "+1.23%", up: true },
+  { sym: "NVDA", price: "138.67", change: "+4.56%", up: true },
+  { sym: "TSLA", price: "356.78", change: "-2.34%", up: false },
+  { sym: "MSFT", price: "423.45", change: "+0.89%", up: true },
+  { sym: "GOOGL", price: "178.34", change: "+1.56%", up: true },
+  { sym: "AMZN", price: "186.45", change: "+2.34%", up: true },
+  { sym: "META", price: "567.89", change: "+3.12%", up: true },
+  { sym: "GLDB", price: "245.67", change: "+2.34%", up: true },
+  { sym: "IBIT", price: "52.34", change: "+3.67%", up: true },
+  { sym: "VIXB", price: "15.43", change: "-3.44%", up: false },
+  { sym: "JPM", price: "234.56", change: "+1.12%", up: true },
+  { sym: "LLY", price: "789.45", change: "+3.45%", up: true },
+  { sym: "AMD", price: "134.56", change: "+3.45%", up: true },
+  { sym: "PLTR", price: "67.89", change: "+5.67%", up: true },
+  { sym: "COIN", price: "289.45", change: "+4.56%", up: true },
+];
+function renderTicker() {
+  const track = document.getElementById("tickerTrack");
+  const items = [...tickerStocks, ...tickerStocks].map(s => {
+    const cls = s.up ? "up" : "down";
+    const arrow = s.up ? "▲" : "▼";
+    return `<div class="ticker-item"><span class="ts">${s.sym}</span><span class="tp">$${s.price}</span><span class="tc ${cls}">${arrow} ${s.change}</span></div>`;
+  }).join("");
+  track.innerHTML = items;
+}
+renderTicker();
+</script>
+
+</body>
+</html>
